@@ -11,8 +11,12 @@ npx http-server .   # then open http://localhost:8080/
 ```
 
 The flow: pick a plane in **Hangar**, then **Roll out**. The plane is towed onto the selected stand.
-Then: **Engine start** → **Auto-taxi** (pushback, taxi, hold short, line up) → full throttle (`W`) →
-rotate with `↓` at Vr → fly and run maneuvers `1`–`7` → **Auto-land** → **Auto-taxi** back to a stand.
+Then: **Engine start** (or hold `E`) → **Taxi to runway** (pushback, taxi, hold short, line up) → full throttle (`W`) →
+rotate with `↓` at Vr → fly and run maneuvers `1`–`7` → **Auto-land** → **Taxi to stand**.
+
+You don't need to remember any of that: the **hint bar** at the bottom always shows the next step for the current
+flight phase. A short onboarding tour runs on first launch (replay it from the World panel), and `H` opens the
+flight manual (controls, how to fly, maneuvers). See `CHANGELOG.md` for what changed in v2.
 
 ## Aircraft (fictional)
 
@@ -27,11 +31,13 @@ rotate with `↓` at Vr → fly and run maneuvers `1`–`7` → **Auto-land** �
 
 Open the browser console and run `__test.all()`. Each check can also run on its own:
 `takeoff(model)`, `maxSpeed(model)`, `ceiling(model)`, `paramEffect()`, `maneuver(model, n)`, `loopScaling()`,
-`landing(model)`, `aiRunway(seconds)`, `drawCalls()`.
+`landing(model)`, `aiRunway(seconds)`, `drawCalls()`, and the v2 checks `hintFlow(model)` (a full flight, logging the
+hint at every phase), `tourRuns()` and `perf()` (draw calls in orbit / chase / night views, must stay < 200).
 
 Headless runner, which also saves Inspect screenshots of every aircraft:
 
 ```bash
-npm i -D playwright
+npm i                                  # playwright + a local three.js (used when the CDN is unreachable)
 node tests/run-tests.mjs --shots
+node tests/shots.mjs docs/screenshots/after --extra   # before/after comparison set
 ```
