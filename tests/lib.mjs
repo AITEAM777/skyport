@@ -36,7 +36,10 @@ export async function openSkyport({ width = 1600, height = 900, query = '', clea
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url);
-  await page.waitForFunction(() => window.__ready || window.__err, null, { timeout: 180000 });
+  await Promise.race([
+    page.waitForFunction(() => window.__ready || window.__err, null, { timeout: 180000 }),
+    new Promise((_, rej) => page.on('pageerror', e => rej(new Error('page error during boot: ' + e.message)))),
+  ]);
   const close = async () => { await browser.close(); server.close(); };
   return { page, context, browser, errors, close, url };
 }
