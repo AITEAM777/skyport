@@ -1,0 +1,35 @@
+PASS  takeoff_meridian       {"model":"meridian","predicted":1267,"measured":1269,"ratio":1.002,"ok":true}
+PASS  maxSpeed_meridian      {"model":"meridian","Vmax":235,"measured":239.1,"err":"1.74%","ok":true}
+PASS  ceiling_meridian       {"model":"meridian","ceiling":12500,"start":12125,"climbRate":-28.65,"ok":true}
+PASS  takeoff_atlas          {"model":"atlas","predicted":1206,"measured":1208,"ratio":1.001,"ok":true}
+PASS  maxSpeed_atlas         {"model":"atlas","Vmax":225,"measured":228.9,"err":"1.73%","ok":true}
+PASS  ceiling_atlas          {"model":"atlas","ceiling":12000,"start":11640,"climbRate":-29.02,"ok":true}
+PASS  takeoff_swift          {"model":"swift","predicted":582,"measured":583,"ratio":1.001,"ok":true}
+PASS  maxSpeed_swift         {"model":"swift","Vmax":250,"measured":254.4,"err":"1.76%","ok":true}
+PASS  ceiling_swift          {"model":"swift","ceiling":15000,"start":14550,"climbRate":-17.54,"ok":true}
+PASS  takeoff_kestrel        {"model":"kestrel","predicted":112,"measured":111,"ratio":0.994,"ok":true}
+PASS  maxSpeed_kestrel       {"model":"kestrel","Vmax":105,"measured":106.7,"err":"1.62%","ok":true}
+PASS  ceiling_kestrel        {"model":"kestrel","ceiling":5500,"start":5335,"climbRate":-5.4,"ok":true}
+PASS  paramEffect            {"model":"meridian","run1":1269,"run2":6172,"climb1":13.8,"climb2":-16.2,"ok":true}
+PASS  maneuver_kestrel_1     {"model":"kestrel","maneuver":"Barrel roll","completed":true,"aborted":false,"time":4,"roll":1,"height":1,"nan":false,"ok":true}
+PASS  maneuver_kestrel_2     {"model":"kestrel","maneuver":"Loop","completed":true,"aborted":false,"time":12.4,"roll":0,"height":239,"nan":false,"ok":true}
+PASS  maneuver_kestrel_3     {"model":"kestrel","maneuver":"Split-S","completed":true,"aborted":false,"time":10.2,"roll":0.1,"height":202,"nan":false,"ok":true}
+PASS  maneuver_kestrel_4     {"model":"kestrel","maneuver":"Zoom climb","completed":true,"aborted":false,"time":22.4,"roll":0,"height":540,"nan":false,"ok":true}
+PASS  maneuver_kestrel_5     {"model":"kestrel","maneuver":"Dive","completed":true,"aborted":false,"time":17.1,"roll":0,"height":0,"nan":false,"ok":true}
+PASS  maneuver_kestrel_6     {"model":"kestrel","maneuver":"Steep turn 180°","completed":true,"aborted":false,"time":19.1,"roll":0.2,"height":0,"nan":false,"ok":true}
+PASS  maneuver_kestrel_7     {"model":"kestrel","maneuver":"Immelmann","completed":true,"aborted":false,"time":8.2,"roll":1,"height":240,"nan":false,"ok":true}
+PASS  maneuver_meridian_1    {"model":"meridian","maneuver":"Barrel roll","completed":true,"aborted":false,"time":16.2,"roll":-0.9,"height":12,"nan":false,"ok":true}
+PASS  maneuver_meridian_2    {"model":"meridian","maneuver":"Loop","blocked":"Not certified for aerobatics"}
+PASS  maneuver_meridian_3    {"model":"meridian","maneuver":"Split-S","blocked":"Not certified for aerobatics"}
+PASS  maneuver_meridian_4    {"model":"meridian","maneuver":"Zoom climb","completed":true,"aborted":false,"time":41.1,"roll":0,"height":2043,"nan":false,"ok":true}
+PASS  maneuver_meridian_5    {"model":"meridian","maneuver":"Dive","completed":true,"aborted":false,"time":30.2,"roll":0,"height":0,"nan":false,"ok":true}
+PASS  maneuver_meridian_6    {"model":"meridian","maneuver":"Steep turn 180°","completed":true,"aborted":false,"time":37.3,"roll":0.2,"height":4,"nan":false,"ok":true}
+PASS  maneuver_meridian_7    {"model":"meridian","maneuver":"Immelmann","blocked":"Not certified for aerobatics"}
+PASS  loopScaling            {"model":"kestrel","base":228,"faster":296,"lowerG":333,"ok":true}
+PASS  landing_meridian       {"model":"meridian","touchdownVs":0.87,"centreline":-0.4,"crashed":null,"ok":true}
+PASS  landing_atlas          {"model":"atlas","touchdownVs":0.48,"centreline":-0.1,"crashed":null,"ok":true}
+PASS  landing_swift          {"model":"swift","touchdownVs":0.59,"centreline":0,"crashed":null,"ok":true}
+PASS  landing_kestrel        {"model":"kestrel","touchdownVs":0.6,"centreline":0,"crashed":null,"ok":true}
+PASS  drawCalls              {"mainPass":117,"withShadowsAndPost":131}
+PASS  aiRunway               {"seconds":900,"aiRunwayEntriesWhilePlayerOnRunway":0,"states":["hold","parked","lap"],"ok":true}
+no console errors
