@@ -10,7 +10,7 @@ const out = path.resolve(process.argv[2] || 'tests/shots/after');
 const extra = process.argv.includes('--extra');
 fs.mkdirSync(out, { recursive: true });
 const { page, errors, close } = await openSkyport({ query: '?notour' });
-const shot = async (name) => { await page.screenshot({ path: path.join(out, name + '.png') }); console.log('  ' + name); };
+const shot = async (name) => { await page.waitForTimeout(700); await page.screenshot({ path: path.join(out, name + '.png') }); console.log('  ' + name); };
 const ev = (fn, arg) => page.evaluate(fn, arg);
 
 await page.waitForTimeout(1800); // loading overlay fade

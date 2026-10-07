@@ -279,7 +279,7 @@ kbd{display:inline-flex;align-items:center;justify-content:center;min-width:21px
 
 <div id="hud">
   <div id="phase">PARKED</div>
-  <div class="hb spd"><span class="k">IAS</span><span class="v" id="h-spd">0</span><span class="s" id="h-kt">0 kt</span><div class="spdbar" id="spdbar"><i id="spdfill"></i><b id="spdmark"></b><u id="spdlbl"></u></div></div>
+  <div class="hb spd"><span class="k">IAS</span><span class="v" id="h-spd">0</span><span class="s" id="h-kt">0 kt</span><div class="spdbar" id="spdbar"><i id="spdfill"></i><b id="spdmark"></b></div></div>
   <div class="hb"><span class="k">AGL</span><span class="v" id="h-alt">0</span><span class="s">m</span></div>
   <div class="hb"><span class="k">V/S</span><span class="v" id="h-vs">0</span><span class="s">m/s</span></div>
   <div class="hb"><span class="k">HDG</span><div id="hdgtape"><canvas id="hdgc" width="300" height="60" style="width:150px;height:30px"></canvas></div></div>
@@ -1557,7 +1557,7 @@ function loftPanel(pf, { s0 = null, s1 = null, ca = 0, cb = 1, side = 1, m = 0.0
     for (const [x, lo] of ring) {
       const yy = nacaY(m, p, fr.st.t, Math.max(x, 0))[lo] + (lo ? -offset : offset);
       _v1.copy(fr.st.le).addScaledVector(fr.c, x * fr.st.c).addScaledVector(fr.n, yy * fr.st.c);
-      pos.push(_v1.x, _v1.y, _v1.z); uv.push(lo ? 1 - x * 0.5 : x * 0.5, (s - sMin) / (sMax - sMin));
+      pos.push(_v1.x, _v1.y, _v1.z); uv.push((side < 0 ? 0.5 : 0) + (lo ? 1 - x * 0.5 : x * 0.5) * 0.5, (s - sMin) / (sMax - sMin)); // left wing → right half of the skin atlas
     }
   }
   for (let k = 0; k < S.length - 1; k++) for (let i = 0; i < R - 1; i++) {
@@ -1585,7 +1585,7 @@ function tipCap(pf, { side = 1, m = 0.02, p = 0.4, nC = 12, len = 0.25, steps = 
     for (const [x, lo] of ring) {
       const xx = xm + (x - xm) * kc, yy = nacaY(m, p, st.t, Math.max(x, 0))[lo] * kt;
       _v1.copy(st.le).addScaledVector(fr.t, off).addScaledVector(fr.c, xx * st.c).addScaledVector(fr.n, yy * st.c);
-      pos.push(_v1.x, _v1.y, _v1.z); uv.push(lo ? 1 - x * 0.5 : x * 0.5, 1);
+      pos.push(_v1.x, _v1.y, _v1.z); uv.push((side < 0 ? 0.5 : 0) + (lo ? 1 - x * 0.5 : x * 0.5) * 0.5, 1);
     }
   }
   for (let k = 0; k < steps; k++) for (let i = 0; i < R - 1; i++) { const A = k * R + i, B = A + 1, C = A + R, D = C + 1; if (side > 0) idx.push(A, B, C, B, D, C); else idx.push(A, C, B, B, C, D); }
@@ -1983,28 +1983,34 @@ function fuseDetailMaps(key) {
   const rgh = tex(rc, { srgb: false, wrap: false }); rgh.wrapS = THREE.RepeatWrapping;
   const out = { normal: nrm, rough: rgh }; liveryCache.set(ck, out); return out;
 }
-// Wing / tail skin: u ∈ [0, .5] upper surface LE→TE, [.5, 1] lower surface TE→LE; v = root → tip.
+// Wing / tail skin atlas: left half = right-hand surfaces, right half = left-hand surfaces (text drawn mirrored so it
+// reads correctly there). Within each half: [0, .5] upper surface LE→TE, [.5, 1] lower surface TE→LE; v = root → tip.
 function wingSkinMaps(walkway) {
   const ck = 'wskin|' + walkway; if (liveryCache.has(ck)) return liveryCache.get(ck);
-  const W = 1024, H = 1024, cc = makeCanvas(W, H), x = cc.getContext('2d'), hc = makeCanvas(W / 2, H / 2), h = hc.getContext('2d'), r = mulberry(walkway ? 3 : 4);
-  const ux = (chord, lower) => (lower ? 1 - chord * 0.5 : chord * 0.5) * W, vy = v => (1 - v) * H;
-  x.fillStyle = '#e6e8ea'; x.fillRect(0, 0, W, H);
-  for (let i = 0; i < 26; i++) { x.fillStyle = `rgba(${r() < .5 ? '0,0,0' : '255,255,255'},${0.015 + r() * 0.03})`; x.fillRect(r() * W, r() * H, 40 + r() * 160, 30 + r() * 110); } // panel tone
-  { const g = x.createLinearGradient(W * 0.5, 0, W * 0.62, 0); g.addColorStop(0, 'rgba(60,55,50,.12)'); g.addColorStop(1, 'rgba(60,55,50,0)'); x.fillStyle = g; x.fillRect(W * 0.5, 0, W * 0.12, H); } // grime ahead of the TE, underside
-  h.fillStyle = '#808080'; h.fillRect(0, 0, W / 2, H / 2);
-  const hl = (x0, y0, x1, y1, col = '#404040', wd = 1.2) => { h.strokeStyle = col; h.lineWidth = wd; h.beginPath(); h.moveTo(x0 / 2, y0 / 2); h.lineTo(x1 / 2, y1 / 2); h.stroke(); };
-  for (const lower of [0, 1]) {
-    for (const ch of [0.08, 0.15, 0.62, 0.72]) hl(ux(ch, lower), 0, ux(ch, lower), H);                    // spar / hinge seams
-    for (let v = 0.07; v < 1; v += 0.075) hl(ux(0.08, lower), vy(v), ux(0.72, lower), vy(v), '#555555', 1); // ribs
-    h.fillStyle = '#a0a0a0'; for (const ch of [0.15, 0.62]) for (let y = 0; y < H; y += 7) h.fillRect(ux(ch, lower) / 2 + 2, y / 2, 1, 1); // rivets
-  }
-  for (let i = 0; i < 6; i++) { const v = 0.1 + r() * 0.75, c0 = 0.25 + r() * 0.25, s = 22 + r() * 18; h.strokeStyle = '#4a4a4a'; h.lineWidth = 1.2; h.strokeRect(ux(c0, 1) / 2 - s / 4, vy(v) / 2 - s / 3, s / 2, s / 1.5); } // underside hatches
-  if (walkway) { // wing-root walkway outline, NO STEP on the flap
-    x.strokeStyle = 'rgba(40,40,40,.75)'; x.lineWidth = 3; x.setLineDash([]); x.strokeRect(ux(0.14, 0), vy(0.16), ux(0.58, 0) - ux(0.14, 0), vy(0.0) - vy(0.16) - 2);
-    x.fillStyle = 'rgba(40,40,40,.08)'; x.fillRect(ux(0.14, 0), vy(0.16), ux(0.58, 0) - ux(0.14, 0), vy(0.0) - vy(0.16));
-    x.fillStyle = 'rgba(45,45,45,.8)'; x.font = '700 22px Inter, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    for (const v of [0.12, 0.32]) x.fillText('NO STEP', ux(0.86, 0), vy(v));
-    x.fillText('WALK', ux(0.36, 0), vy(0.08));
+  const W = 1024, H = 1024, cc = makeCanvas(W * 2, H), x = cc.getContext('2d'), hc = makeCanvas(W, H / 2), h = hc.getContext('2d');
+  const vy = v => (1 - v) * H;
+  for (const half of [0, 1]) {
+    const r = mulberry(walkway ? 3 : 4), ox = half * W, ux = (chord, lower) => ox + (lower ? 1 - chord * 0.5 : chord * 0.5) * W;
+    x.fillStyle = '#e6e8ea'; x.fillRect(ox, 0, W, H);
+    for (let i = 0; i < 26; i++) { x.fillStyle = `rgba(${r() < .5 ? '0,0,0' : '255,255,255'},${0.015 + r() * 0.03})`; x.fillRect(ox + r() * (W - 160), r() * H, 40 + r() * 160, 30 + r() * 110); } // panel tone
+    { const g = x.createLinearGradient(ox + W * 0.5, 0, ox + W * 0.62, 0); g.addColorStop(0, 'rgba(60,55,50,.12)'); g.addColorStop(1, 'rgba(60,55,50,0)'); x.fillStyle = g; x.fillRect(ox + W * 0.5, 0, W * 0.12, H); } // grime, underside
+    const hux = (chord, lower) => (ux(chord, lower)) / 2, hl = (x0, y0, x1, y1, col = '#404040', wd = 1.2) => { h.strokeStyle = col; h.lineWidth = wd; h.beginPath(); h.moveTo(x0, y0 / 2); h.lineTo(x1, y1 / 2); h.stroke(); };
+    h.fillStyle = '#808080'; h.fillRect(ox / 2, 0, W / 2, H / 2);
+    for (const lower of [0, 1]) {
+      for (const ch of [0.08, 0.15, 0.62, 0.72]) hl(hux(ch, lower), 0, hux(ch, lower), H);                       // spar / hinge seams
+      for (let v = 0.07; v < 1; v += 0.075) hl(hux(0.08, lower), vy(v), hux(0.72, lower), vy(v), '#555555', 1);   // ribs
+      h.fillStyle = '#a0a0a0'; for (const ch of [0.15, 0.62]) for (let y = 0; y < H; y += 7) h.fillRect(hux(ch, lower) + 1, y / 2, 1, 1); // rivets
+    }
+    for (let i = 0; i < 6; i++) { const v = 0.1 + r() * 0.75, c0 = 0.25 + r() * 0.25, sz = 22 + r() * 18; h.strokeStyle = '#4a4a4a'; h.lineWidth = 1.2; h.strokeRect(hux(c0, 1) - sz / 4, vy(v) / 2 - sz / 3, sz / 2, sz / 1.5); } // hatches
+    if (walkway) { // wing-root walkway outline, NO STEP on the flap
+      const x0 = Math.min(ux(0.14, 0), ux(0.58, 0)), x1 = Math.max(ux(0.14, 0), ux(0.58, 0));
+      x.strokeStyle = 'rgba(40,40,40,.75)'; x.lineWidth = 3; x.strokeRect(x0, vy(0.16), x1 - x0, vy(0.0) - vy(0.16) - 2);
+      x.fillStyle = 'rgba(40,40,40,.08)'; x.fillRect(x0, vy(0.16), x1 - x0, vy(0.0) - vy(0.16));
+      x.fillStyle = 'rgba(45,45,45,.8)'; x.font = '700 22px Inter, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const label = (txt, cx, cy) => { x.save(); x.translate(cx, cy); if (half) x.scale(-1, 1); x.fillText(txt, 0, 0); x.restore(); };
+      for (const v of [0.12, 0.32]) label('NO STEP', ux(0.86, 0), vy(v));
+      label('WALK', ux(0.36, 0), vy(0.08));
+    }
   }
   const map = tex(cc, { wrap: false }), nrm = tex(heightToNormal(hc, 1.6), { srgb: false, wrap: false });
   const out = { map, normal: nrm }; liveryCache.set(ck, out); return out;
@@ -2059,8 +2065,8 @@ function initAircraftMaterials() {
   // light halos: one Points draw per aircraft, additive, sized in metres; bloom turns them into glows
   ACMAT.halo = new THREE.ShaderMaterial({
     uniforms: { scale: { value: 800 }, gain: { value: 1 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    vertexShader: 'attribute float size; attribute vec3 hcol; varying vec3 vC; uniform float scale; void main(){ vC = hcol; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = clamp(size * scale / -mv.z, 0.0, 256.0); gl_Position = projectionMatrix * mv; }',
-    fragmentShader: 'varying vec3 vC; uniform float gain; void main(){ vec2 d = gl_PointCoord - 0.5; float r2 = dot(d, d) * 4.0; float a = exp(-r2 * 5.0) * 0.75 + exp(-r2 * 40.0) * 1.6; if (a < 0.01) discard; gl_FragColor = vec4(vC * a * gain, 1.0); }',
+    vertexShader: 'attribute float size; attribute vec3 hcol; varying vec3 vC; uniform float scale; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z; vC = hcol * smoothstep(2.0, 14.0, d); gl_PointSize = clamp(size * scale / d, 0.0, 44.0); gl_Position = projectionMatrix * mv; }', // capped size, dimmer right next to the camera
+    fragmentShader: 'varying vec3 vC; uniform float gain; void main(){ vec2 d = gl_PointCoord - 0.5; float r2 = dot(d, d) * 4.0; float a = exp(-r2 * 5.0) * 0.45 + exp(-r2 * 40.0) * 1.0; if (a < 0.01) discard; gl_FragColor = vec4(vC * a * gain, 1.0); }',
   });
 }
 function spinnerTex() { // dark spinner with a white spiral (the classic anti-ingestion marking)
@@ -3301,10 +3307,10 @@ function updatePAPI() {
   }
   INST.papi.instanceColor.needsUpdate = true;
 }
-const landingLight = new THREE.SpotLight(0xfff4e0, 0, 900, 0.32, 0.55, 1.6); scene.add(landingLight, landingLight.target);
+const landingLight = new THREE.SpotLight(0xfff4e0, 0, 700, 0.36, 0.75, 2); // physical units: candela-ish, inverse-square scene.add(landingLight, landingLight.target);
 function updateLandingLight() {
   const p = game.player, on = p && p.lightsOn && world.lights > 0.15;
-  landingLight.intensity = on ? 9e5 * world.lights : 0;
+  landingLight.intensity = on ? (p.M.fus.R < 1 ? 1600 : 4200) * world.lights : 0; // was 9e5 → the whole frame blew out at night
   if (p) { const L = p.M.lights.landing; landingLight.position.set(L[0], L[1], 0); p.root.localToWorld(landingLight.position); p.axes(); landingLight.target.position.copy(landingLight.position).addScaledVector(_fw, 100).addScaledVector(_upv, -12); }
 }
 
@@ -3463,7 +3469,7 @@ function updateHUD() {
   { // target-speed marker: Vr on the takeoff roll, Vref on approach
     const ph = phaseOf(p), roll = p.onGround && onRunway(p.pos) && !game.landed && (p.throttle > 0.5 || ph === 'LINE-UP'), appr = !p.onGround && (game.autoland || ph === 'APPROACH' || ph === 'FLARE');
     const tgt = roll ? p.dv.Vr : appr ? 1.3 * p.dv.Vr : 0, bar = $('spdbar'); bar.classList.toggle('on', tgt > 0);
-    if (tgt > 0) { const full = tgt * 1.35; $('spdfill').style.width = clamp(p.ias / full, 0, 1) * 100 + '%'; $('spdmark').style.left = $('spdlbl').style.left = (100 / 1.35) + '%'; const lbl = `${roll ? 'Vr' : 'Vref'} ${KT(tgt)}`; if ($('spdlbl').textContent !== lbl) $('spdlbl').textContent = lbl; }
+    if (tgt > 0) { const full = tgt * 1.35; $('spdfill').style.width = clamp(p.ias / full, 0, 1) * 100 + '%'; $('spdmark').style.left = (100 / 1.35) + '%'; $('h-kt').textContent = `${Math.round(p.ias * 1.944)} / ${roll ? 'Vr' : 'Vref'} ${KT(tgt)} kt`; }
   }
   $('h-alt').textContent = fmt(Math.max(0, p.agl - 0.2)); $('h-vs').textContent = (p.vs >= 0 ? '+' : '') + p.vs.toFixed(1);
   $('h-g').textContent = p.nLoad.toFixed(1); $('h-gl').textContent = 'lim ' + p.perf.G.toFixed(1);
