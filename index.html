@@ -126,6 +126,110 @@ body.keys-open #camlbl{bottom:228px}
 #mute{position:fixed;right:284px;top:58px;z-index:5}
 #touch{display:none}
 
+/* ---------- in-game guide: hint bar ---------- */
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;margin:0 1px;border-radius:6px;background:linear-gradient(#fffdf8,#ece8de);border:1px solid rgba(35,34,31,.22);box-shadow:0 1.5px 0 rgba(35,34,31,.22),inset 0 1px 0 #fff;font:600 11px Inter,system-ui,sans-serif;color:var(--ink);vertical-align:1px;line-height:1}
+#hintbar{position:fixed;left:50%;bottom:22px;transform:translateX(calc(-50% - 130px));z-index:7;display:flex;align-items:center;gap:10px;min-height:44px;max-width:min(760px,calc(100vw - 560px));padding:6px 6px 6px 18px;border-radius:999px;background:rgba(250,248,242,.74);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--line);box-shadow:0 10px 36px rgba(40,35,25,.14);transition:bottom .45s cubic-bezier(.2,.7,.2,1),opacity .35s ease,transform .35s ease,border-color .3s ease,background-color .3s ease}
+#hintbar.off{opacity:0;pointer-events:none;transform:translateX(calc(-50% - 130px)) translateY(10px)}
+#hintbar.warn{background:rgba(253,236,229,.86);border-color:rgba(194,86,46,.55)}
+#hintbar .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none;box-shadow:0 0 0 3px rgba(63,125,85,.18);transition:background-color .3s ease,box-shadow .3s ease}
+#hintbar.warn .dot{background:var(--accent);box-shadow:0 0 0 3px rgba(194,86,46,.22);animation:hb-blink .8s ease-in-out infinite}
+#hintbar.pulse .dot{animation:hb-blink .9s ease-in-out infinite}
+@keyframes hb-blink{50%{opacity:.25}}
+.hb-track{position:relative;flex:1 1 auto;min-width:0;height:24px;overflow:hidden;display:grid}
+.hint{grid-area:1/1;height:24px;display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px;color:var(--ink);transition:opacity .25s ease,transform .25s cubic-bezier(.2,.7,.2,1);overflow:hidden;text-overflow:ellipsis}
+.hint b{font-weight:600}
+.hint.enter{opacity:0;transform:translateY(10px)}
+.hint.leave{opacity:0;transform:translateY(-10px)}
+#hintbar.warn .hint{color:#8d3417;font-weight:500}
+#hintbar.pulse .hint{animation:hb-pulse 1.1s ease-in-out infinite}
+@keyframes hb-pulse{50%{transform:scale(1.035)}}
+.hint .done{opacity:.38;text-decoration:line-through;text-decoration-thickness:1px}
+.hb-prog{flex:none;width:96px;height:6px;border-radius:3px;background:rgba(35,34,31,.12);position:relative;overflow:hidden;display:none}
+#hintbar.has-prog .hb-prog{display:block}
+.hb-prog i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:linear-gradient(90deg,#3f7d55,#62a879);transition:width .15s linear}
+.hb-prog.full i{background:linear-gradient(90deg,#c2562e,#e0884f)}
+.hb-btn{appearance:none;flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.65);color:var(--ink2);font:600 13px Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,transform .15s}
+.hb-btn:hover{background:#fff;color:var(--ink);transform:translateY(-1px)}
+#hints-chip{position:fixed;left:50%;bottom:22px;transform:translateX(calc(-50% - 130px)) translateY(8px);z-index:7;opacity:0;pointer-events:none;padding:6px 12px 6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:500 11px Inter,sans-serif;color:var(--ink2);cursor:pointer;display:flex;gap:6px;align-items:center;transition:opacity .3s ease,transform .3s ease,bottom .45s cubic-bezier(.2,.7,.2,1)}
+#hints-chip.on{opacity:1;pointer-events:auto;transform:translateX(calc(-50% - 130px))}
+#hints-chip:hover{color:var(--ink);background:#fff}
+#hints-chip i{width:6px;height:6px;border-radius:50%;background:var(--ink3)}
+
+/* HUD target-speed marker */
+.hb.spd{position:relative}
+.spdbar{position:absolute;left:4px;right:4px;bottom:-5px;height:3px;border-radius:2px;background:rgba(35,34,31,.12);opacity:0;transition:opacity .3s ease}
+.spdbar.on{opacity:1}
+.spdbar i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--ink2)}
+.spdbar b{position:absolute;top:-4px;width:2px;height:11px;margin-left:-1px;background:var(--accent);border-radius:1px}
+.spdbar u{position:absolute;top:-17px;transform:translateX(-50%);font-size:8.5px;letter-spacing:.06em;color:var(--accent);text-decoration:none;white-space:nowrap;font-weight:600}
+
+/* maneuver buttons: soft-disabled (keeps the tooltip), unlock flash */
+.btn.dis{opacity:.42;cursor:not-allowed}
+.btn.dis:hover{background:rgba(255,255,255,.6);border-color:var(--line)}
+.btn.unlock{animation:unlock 1.4s ease}
+@keyframes unlock{0%{box-shadow:0 0 0 0 rgba(63,125,85,.0);background:#fff}25%{box-shadow:0 0 0 4px rgba(63,125,85,.35);background:#e6f2ea;border-color:var(--ok)}100%{box-shadow:0 0 0 0 rgba(63,125,85,0)}}
+[data-tip]:hover::after{max-width:220px;white-space:normal;width:max-content}
+
+/* "What changed?" readout under the performance sliders */
+#perfdiff{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(35,34,31,.05);font-size:10.5px;color:var(--ink2);font-variant-numeric:tabular-nums;opacity:0;transform:translateY(4px);transition:opacity .3s ease,transform .3s ease;min-height:0}
+#perfdiff.on{opacity:1;transform:none}
+#perfdiff .t{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
+#perfdiff div b{color:var(--ink);font-weight:600}
+#perfdiff .up{color:var(--accent)}#perfdiff .dn{color:var(--ok)}
+
+/* ---------- onboarding tour ---------- */
+#tour{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .4s ease}
+#tour.on{opacity:1;pointer-events:auto}
+#tour-spot{position:fixed;border-radius:16px;box-shadow:0 0 0 9999px rgba(24,22,18,.56),0 0 0 2px rgba(255,248,230,.85),0 0 40px rgba(255,240,210,.35);transition:left .55s cubic-bezier(.2,.7,.2,1),top .55s cubic-bezier(.2,.7,.2,1),width .55s cubic-bezier(.2,.7,.2,1),height .55s cubic-bezier(.2,.7,.2,1),border-radius .55s ease;pointer-events:none}
+#tour-card{position:fixed;width:300px;padding:16px 18px 14px;border-radius:14px;background:#faf8f2;color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.28);transition:left .55s cubic-bezier(.2,.7,.2,1),top .55s cubic-bezier(.2,.7,.2,1),opacity .3s ease}
+#tour-card .step{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+#tour-card h4{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:24px;margin:2px 0 6px;line-height:1.1}
+#tour-card p{font-size:12.5px;color:var(--ink2);line-height:1.5}
+#tour-card .row{justify-content:space-between;margin-top:14px}
+#tour-card .dots{display:flex;gap:5px}#tour-card .dots i{width:6px;height:6px;border-radius:50%;background:rgba(35,34,31,.18);transition:background .3s ease,width .3s ease}#tour-card .dots i.on{background:var(--ink);width:16px;border-radius:3px}
+#tour-card .btn.primary{background:var(--ink);color:#f4f1e8;border-color:var(--ink);padding:7px 14px}
+
+/* ---------- help overlay ---------- */
+#help{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;background:rgba(24,22,18,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s ease}
+#help.on{opacity:1;pointer-events:auto}
+#help .sheet{width:min(820px,calc(100vw - 40px));max-height:calc(100vh - 60px);display:flex;flex-direction:column;border-radius:18px;background:#faf8f2;box-shadow:0 30px 80px rgba(0,0,0,.3);transform:translateY(14px) scale(.985);transition:transform .35s cubic-bezier(.2,.7,.2,1);overflow:hidden}
+#help.on .sheet{transform:none}
+#help header{display:flex;align-items:center;gap:18px;padding:18px 22px 0}
+#help header h2{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:30px;line-height:1;margin-right:auto}
+.tabs{display:flex;gap:4px;padding:3px;border-radius:10px;background:rgba(35,34,31,.06)}
+.tabs button{appearance:none;border:0;background:none;padding:7px 13px;border-radius:8px;font:500 12px Inter,sans-serif;color:var(--ink2);cursor:pointer;transition:background .2s,color .2s}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+#help .x{appearance:none;border:0;background:none;font-size:22px;color:var(--ink3);cursor:pointer;width:32px;height:32px;border-radius:8px}#help .x:hover{background:rgba(0,0,0,.05);color:var(--ink)}
+#help .body{padding:16px 22px 6px;overflow-y:auto}
+#help .pane{display:none;animation:fadein .3s ease}#help .pane.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#help footer{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--ink3)}
+.kb{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.kb .r{display:flex;gap:5px}
+.kb .k,.arrows .k{width:40px;height:40px;border-radius:8px;border:1px solid rgba(35,34,31,.14);background:#f1eee6;color:var(--ink3);font:500 12px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.kb .k.w{width:62px}
+.kb .k.hl,.arrows .k.hl{background:linear-gradient(#fffdf8,#efe9dc);color:var(--ink);border-color:rgba(35,34,31,.32);box-shadow:0 2px 0 rgba(35,34,31,.25)}
+.kb .k small,.arrows .k small{font-size:7.5px;letter-spacing:.02em;color:var(--accent);margin-top:2px;max-width:56px;text-align:center;line-height:1.05;text-transform:uppercase}
+.kbwrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end}
+.arrows{display:grid;grid-template-columns:repeat(3,40px);gap:5px}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 18px;margin-top:16px;font-size:12px;color:var(--ink2)}
+.legend div{line-height:1.9}
+.mouse{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.mouse>div{padding:10px 12px;border-radius:10px;background:rgba(35,34,31,.04);font-size:12px;color:var(--ink2)}
+.mouse h5{font:600 10px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.steps .s{padding:12px;border-radius:12px;background:rgba(35,34,31,.04);display:flex;flex-direction:column;gap:6px}
+.steps .s svg{width:100%;height:64px}
+.steps .s h5{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:19px;display:flex;gap:8px;align-items:baseline}
+.steps .s h5 span{font:600 10px Inter,sans-serif;color:var(--ink3)}
+.steps .s p{font-size:11.5px;color:var(--ink2);line-height:1.45}
+.mans{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:10px}
+.mans .m{display:flex;gap:10px;padding:10px;border-radius:12px;background:rgba(35,34,31,.04)}
+.mans .m svg{flex:none;width:86px;height:64px;border-radius:8px;background:#fff}
+.mans .m h5{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.mans .m p{font-size:10.5px;color:var(--ink2);line-height:1.45}
+.mans .m .req{font-variant-numeric:tabular-nums}
+
 @media (max-width:700px){
   #title{left:16px;top:14px}#title h1{font-size:40px;margin:2px 0 6px}#title p,#title .rule,#controls,#camlbl{display:none}
   #pill{right:16px;top:14px}#mute{right:16px;top:46px}
@@ -133,6 +237,15 @@ body.keys-open #camlbl{bottom:228px}
   #hud{bottom:calc(42vh + 8px);transform:translateX(-50%);padding:6px 8px;gap:8px;flex-wrap:wrap;justify-content:center;max-width:96vw}
   #hdgtape{display:none}.hb{min-width:44px}.hb .v{font-size:14px}#phase{font-size:15px;min-width:80px}
   #toast,#inspectbar{transform:translateX(-50%)}
+  #hintbar,#hints-chip.on{transform:translateX(-50%);max-width:calc(100vw - 24px);left:50%}
+  #hintbar.off{transform:translateX(-50%) translateY(10px)}
+  .hint{font-size:12px}.hb-prog{width:56px}
+  #help{align-items:flex-end}
+  #help .sheet{width:100vw;max-height:92vh;border-radius:18px 18px 0 0}
+  #help header{flex-wrap:wrap;gap:10px}
+  .steps{grid-template-columns:1fr 1fr}.mouse{grid-template-columns:1fr}
+  .kb .k,.arrows .k{width:30px;height:32px;font-size:10.5px}.kb .k.w{width:44px}.kb .k small,.arrows .k small{display:none}.arrows{grid-template-columns:repeat(3,30px)}
+  #tour-card{width:calc(100vw - 32px)}
   #touch.on{display:block}
   #stick{position:fixed;left:18px;bottom:calc(42vh + 70px);width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.35);border:1px solid var(--line);z-index:6;touch-action:none}
   #stick i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px;border-radius:50%;background:var(--ink);opacity:.7}
@@ -166,7 +279,7 @@ body.keys-open #camlbl{bottom:228px}
 
 <div id="hud">
   <div id="phase">PARKED</div>
-  <div class="hb"><span class="k">IAS</span><span class="v" id="h-spd">0</span><span class="s" id="h-kt">0 kt</span></div>
+  <div class="hb spd"><span class="k">IAS</span><span class="v" id="h-spd">0</span><span class="s" id="h-kt">0 kt</span><div class="spdbar" id="spdbar"><i id="spdfill"></i><b id="spdmark"></b><u id="spdlbl"></u></div></div>
   <div class="hb"><span class="k">AGL</span><span class="v" id="h-alt">0</span><span class="s">m</span></div>
   <div class="hb"><span class="k">V/S</span><span class="v" id="h-vs">0</span><span class="s">m/s</span></div>
   <div class="hb"><span class="k">HDG</span><div id="hdgtape"><canvas id="hdgc" width="300" height="60" style="width:150px;height:30px"></canvas></div></div>
@@ -182,6 +295,39 @@ body.keys-open #camlbl{bottom:228px}
 </div></div>
 
 <div id="touch"><div id="stick"><i></i></div><div id="tslider"><i></i></div></div>
+
+<div id="hintbar" class="off" role="status" aria-live="polite">
+  <span class="dot"></span>
+  <div class="hb-track" id="hb-track"></div>
+  <div class="hb-prog" id="hb-prog"><i></i></div>
+  <button class="hb-btn" id="hint-help" title="Help (H)" aria-label="Open help">?</button>
+  <button class="hb-btn" id="hint-close" title="Hide hints" aria-label="Hide hints">×</button>
+</div>
+<button id="hints-chip" title="Show hints again"><i></i>Hints off</button>
+
+<div id="tour" aria-hidden="true">
+  <div id="tour-spot"></div>
+  <div id="tour-card" role="dialog" aria-label="Quick tour">
+    <div class="step" id="tour-step">Step 1 of 5</div>
+    <h4 id="tour-title"></h4>
+    <p id="tour-text"></p>
+    <div class="row"><div class="dots" id="tour-dots"></div><div style="display:flex;gap:6px"><button class="btn" id="tour-skip">Skip</button><button class="btn primary" id="tour-next">Next</button></div></div>
+  </div>
+</div>
+
+<div id="help" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Help">
+    <header><h2>Flight manual</h2>
+      <div class="tabs" id="help-tabs"><button data-tab="controls" class="on">Controls</button><button data-tab="fly">How to fly</button><button data-tab="maneuvers">Maneuvers</button></div>
+      <button class="x" id="help-x" aria-label="Close">×</button></header>
+    <div class="body">
+      <div class="pane on" data-pane="controls" id="pane-controls"></div>
+      <div class="pane" data-pane="fly" id="pane-fly"></div>
+      <div class="pane" data-pane="maneuvers" id="pane-maneuvers"></div>
+    </div>
+    <footer><span><kbd>H</kbd> opens this anytime · <kbd>Esc</kbd> closes</span><button class="btn primary" id="help-ok" style="background:var(--ink);color:#f4f1e8;border-color:var(--ink);padding:7px 16px">Got it</button></footer>
+  </div>
+</div>
 
 <aside id="panel">
   <section class="sec" id="s-hangar"><h3>Hangar</h3><div class="body">
@@ -216,7 +362,8 @@ body.keys-open #camlbl{bottom:228px}
     <div class="slider"><div class="top"><span>Time of day</span><b id="todv">Day</b></div>
       <input type="range" id="tod" min="0" max="1" step="0.001" value="0.33"><div class="tod"><span>dawn</span><span>day</span><span>golden</span><span>night</span></div></div>
     <div class="grid2"><button class="btn on" id="b-ai">AI traffic</button><button class="btn" id="b-cam">Camera: Orbit</button>
-      <button class="btn" id="b-reset">Reset plane</button><button class="btn" id="b-view">Reset view</button></div>
+      <button class="btn" id="b-reset">Reset plane</button><button class="btn" id="b-view">Reset view</button>
+      <button class="btn" id="b-help">Help · H</button><button class="btn" id="b-tour">Replay tour</button></div>
   </div></section>
 </aside>
 <script type="module">
@@ -1129,10 +1276,10 @@ function buildDetails() {
   INST.papi = instanced(papiGeo, MAT.lamp.clone(), papi, { colors: pc });
   // trees: 3 variants (clustered broadleaf, tiered conifer, columnar poplar) in natural groups.
   // Crowns carry vertex colours (lit top, shaded underside = baked AO) multiplied by a per-instance tint.
-  const lump = (r, seed) => { const g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position; for (let i = 0; i < p.count; i++) { _v1.fromBufferAttribute(p, i); const n = 1 + (vnoise(_v1.x * 2.6 / r + seed, _v1.y * 2.6 / r + _v1.z * 1.9 / r) - .5) * 0.42; p.setXYZ(i, _v1.x * n, _v1.y * n, _v1.z * n); } g.deleteAttribute('normal'); g.deleteAttribute('uv'); const m = mergeVertices(g); m.computeVertexNormals(); return m; };
+  const lump = (r, seed) => { const g = new THREE.IcosahedronGeometry(r, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { _v1.fromBufferAttribute(p, i); const n = 1 + (vnoise(_v1.x * 2.6 / r + seed, _v1.y * 2.6 / r + _v1.z * 1.9 / r) - .5) * 0.42; p.setXYZ(i, _v1.x * n, _v1.y * n, _v1.z * n); } g.deleteAttribute('normal'); g.deleteAttribute('uv'); const m = mergeVertices(g); m.computeVertexNormals(); return m; };
   const shadeCrown = (g, y0, y1) => { g = normGeo(g, true); const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color; for (let i = 0; i < p.count; i++) { const h = clamp((p.getY(i) - y0) / (y1 - y0), 0, 1), up = n.getY(i) * 0.5 + 0.5, k = 0.55 + 0.3 * h + 0.22 * up; c.setXYZ(i, k * 0.97, k, k * 0.9); } return g; };
-  const crownA = shadeCrown(mergeGeometries([lump(1, 1), lump(0.72, 5).translate(0.62, 0.28, 0.22), lump(0.68, 9).translate(-0.55, 0.18, -0.35), lump(0.6, 13).translate(0.05, 0.62, -0.45), lump(0.56, 17).translate(-0.12, 0.5, 0.58)].map(g => normGeo(g))), -0.9, 1.3);
-  const tier = (r, h, y) => { const g = new THREE.ConeGeometry(r, h, 10, 2), p = g.attributes.position; for (let i = 0; i < p.count; i++) { _v1.fromBufferAttribute(p, i); const n = 1 + (vnoise(_v1.x * 3 + y, _v1.z * 3 + _v1.y) - .5) * 0.3; p.setXYZ(i, _v1.x * n, _v1.y, _v1.z * n); } g.computeVertexNormals(); return g.translate(0, y, 0); };
+  const crownA = shadeCrown(mergeGeometries([lump(1, 1), lump(0.74, 5).translate(0.62, 0.28, 0.22), lump(0.7, 9).translate(-0.55, 0.18, -0.35), lump(0.62, 13).translate(0.02, 0.6, 0.1)].map(g => normGeo(g))), -0.9, 1.3);
+  const tier = (r, h, y) => { const g = new THREE.ConeGeometry(r, h, 9, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { _v1.fromBufferAttribute(p, i); const n = 1 + (vnoise(_v1.x * 3 + y, _v1.z * 3 + _v1.y) - .5) * 0.3; p.setXYZ(i, _v1.x * n, _v1.y, _v1.z * n); } g.computeVertexNormals(); return g.translate(0, y, 0); };
   const crownB = shadeCrown(mergeGeometries([tier(1, 1.3, -0.55), tier(0.78, 1.15, 0.1), tier(0.56, 1.0, 0.7), tier(0.32, 0.8, 1.15)].map(g => normGeo(g))), -1.2, 1.55);
   const crownC = shadeCrown(mergeGeometries([lump(1, 21).scale(0.55, 1.5, 0.55), lump(0.7, 25).scale(0.55, 1.3, 0.55).translate(0.12, 0.85, 0.05), lump(0.6, 29).scale(0.6, 1.2, 0.6).translate(-0.08, -0.7, 0.1)].map(g => normGeo(g))), -1.6, 1.8);
   MAT.crown.vertexColors = true;
@@ -1149,7 +1296,7 @@ function buildDetails() {
     KC[kind].push(green);
   };
   let tries = 0, planted = 0;
-  while (planted < 1500 && tries++ < 40000) { // groups: a centre, then 3–14 trees scattered around it
+  while (planted < 1300 && tries++ < 40000) { // groups: a centre, then 3–14 trees scattered around it
     const cx = rr(-BLOCK.w / 2, BLOCK.w / 2), cz = rr(-BLOCK.d / 2, BLOCK.d / 2);
     if (fbm(cx / 160 + 3, cz / 160) < 0.46 && rnd() < 0.85) continue;
     if (!ok(cx, cz)) continue;
@@ -2238,7 +2385,7 @@ function onRunway(p) { return Math.abs(p.z - RW.z) < RW.wid / 2 + 4 && Math.abs(
    ============================================================ */
 const RWY_HDG = 0; // runway 09: heading east (+X)
 // line-up spot: on the centreline with the whole aircraft past the piano keys and the designator (ends 66 m in)
-const lineUpX = ac => -RW.len / 2 + 72 + Math.max(-ac.M.fus.xt, 4);
+const lineUpX = ac => -RW.len / 2 + Math.max(72 + Math.max(-ac.M.fus.xt, 4), 110); // ≥ 110 m in: room to straighten after the lead-on curve
 const standStop = (si, ac) => new THREE.Vector3(STAND_X[si], 0, STAND_NOSE_Z - ac.M.fus.xn); // nose on the stop bar
 const towTug = { mesh: null };
 function rateToInput(ac, axis, rate) { // desired body rate → normalised stick, accounting for authority
@@ -2281,7 +2428,7 @@ class TaxiPilot {
     if (lineUp) { // follow the painted lead-on curve onto the centreline, then roll to the line-up spot
       const last = this.pts[this.pts.length - 1]; this.pts.pop(); this.kinds.pop();
       for (const [px, pz] of arcPts(last[0] + 30, RW.z + 30, 30, PI, PI * 1.5, 6)) { this.pts.push([px, pz]); this.kinds.push('rwy'); }
-      this.pts.push([Math.max(lineUpX(ac), last[0] + 45), RW.z]); this.kinds.push('end'); }
+      this.pts.push([Math.max(lineUpX(ac), last[0] + 30 + 42), RW.z]); this.kinds.push('end'); }
     if (stand !== null) { const s = standStop(stand, ac); this.pts.push([s.x, s.z]); this.kinds.push('end'); }
     this.holds = []; for (let i = 0; i < this.kinds.length - 1; i++) if (this.kinds[i] === 'hold' && this.kinds[i + 1] === 'rwy') this.holds.push(i);
     this.cleared = {}; this.seg = 0; this.done = false; this.waiting = false;
@@ -2293,9 +2440,10 @@ class TaxiPilot {
     // progress: advance past segment ends (never beyond an uncleared hold point)
     while (this.seg < Math.min(P.length - 2, Math.max(segMax, 0))) { const [ax, az] = P[this.seg], [bx, bz] = P[this.seg + 1]; const tx = bx - ax, tz = bz - az, L2 = tx * tx + tz * tz; const t = ((ac.pos.x - ax) * tx + (ac.pos.z - az) * tz) / (L2 || 1); if (t > 1 || Math.hypot(bx - ac.pos.x, bz - ac.pos.z) < 10) this.seg++; else break; }
     // carrot: walk the path ahead by the lookahead distance, stopping at an uncleared hold point
-    const ld = clamp(10 + ac.v * 1.4, 12, 34); let rem = ld, sIdx = this.seg, cx, cz;
+    const final = this.seg >= P.length - 3, ld = final ? clamp(5 + ac.v * 1.4, 7, 34) : clamp(10 + ac.v * 1.4, 12, 34); let rem = ld, sIdx = this.seg, cx, cz;
     { const [ax, az] = P[sIdx], [bx, bz] = P[sIdx + 1]; const tx = bx - ax, tz = bz - az, L = Math.hypot(tx, tz) || 1; const t = clamp(((ac.pos.x - ax) * tx + (ac.pos.z - az) * tz) / (L * L), 0, 1); cx = ax + tx * t; cz = az + tz * t; }
     while (rem > 0 && sIdx < P.length - 1) { const [bx, bz] = P[sIdx + 1]; const dd = Math.hypot(bx - cx, bz - cz); if (dd >= rem) { cx += (bx - cx) / dd * rem; cz += (bz - cz) / dd * rem; rem = 0; } else { rem -= dd; cx = bx; cz = bz; sIdx++; if (hold !== undefined && sIdx >= hold) break; } }
+    if (hold === undefined && rem > 0 && P.length > 1) { const [ax2, az2] = P[P.length - 2], [bx2, bz2] = P[P.length - 1], l2 = Math.hypot(bx2 - ax2, bz2 - az2) || 1; cx = bx2 + (bx2 - ax2) / l2 * rem; cz = bz2 + (bz2 - az2) / l2 * rem; } // past the end: keep tracking the final line (aligns on the centreline)
     if (hold !== undefined && rem > 0) { const [hx, hz] = P[hold], [nx, nz] = P[hold + 1], l = Math.hypot(nx - hx, nz - hz) || 1; cx = hx + (nx - hx) / l * rem; cz = hz + (nz - hz) / l * rem; } // keep pointing down the route
     const hdg = ac.headingRad, want = Math.atan2(-(cz - ac.pos.z), cx - ac.pos.x), err = wrapPI(want - hdg);
     const L = Math.max(ac.wheelbase, 3); ac.steer = clamp(Math.atan2(2 * L * Math.sin(err), ld), -1.0, 1.0); // pure pursuit on the nose wheel
@@ -2419,7 +2567,7 @@ class Maneuver {
   nAvail() { const ac = this.ac, d = ac.dv, sig = Math.exp(-Math.max(ac.pos.y, 0) / 8500); return Math.min(0.85 * ac.perf.G, d.kL * sig * ac.v * ac.v * 1.2 / d.W); }
   update(dt) {
     const ac = this.ac, inp = ac.input, g = G0, v = Math.max(ac.v, 1);
-    this.t += dt; this.pt += dt; this.accRoll += ac.w.x * dt; this.accPitch += ac.w.z * dt;
+    this.t += dt; this.pt += dt; this.accRoll += ac.w.x * dt; this.accPitch += ac.w.z * dt; this.maxG = Math.max(this.maxG || 1, ac.nLoad); this.maxV = Math.max(this.maxV || 0, ac.ias);
     this.maxAlt = Math.max(this.maxAlt, ac.pos.y); this.minAlt = Math.min(this.minAlt, ac.pos.y);
     ac.axes(); const upY = _upv.y, rightY = _rt.y, pitch = ac.pitchRad, bank = ac.bankRad;
     let p = 0, r = 0, y = -ac.beta * 2, thr = ac.throttle;
@@ -2480,6 +2628,20 @@ class Maneuver {
     if (this.t > 120) { this.phase = 100; }
     return false;
   }
+}
+
+Maneuver.prototype.progress = function () { // rough 0..1 for the hint bar
+  const k = this.def.key, P = this.phase;
+  if (P >= 100) return 1;
+  if (k === 'loop') return P === 0 ? this.accPitch / TAU : 0.97;
+  if (k === 'barrel') return P === 0 ? this.accRoll / TAU : 0.97;
+  if (k === 'turn') return P === 0 ? Math.abs(wrapPI(this.ac.headingRad - this.hdg0)) / PI : 0.97;
+  return clamp((P + 0.5) / 4, 0, 0.97);
+};
+function maneuverStats(m) { // "Loop complete · 3.4 G · 412 m tall"
+  const k = m.def.key, g = `${(m.maxG || 1).toFixed(1)} G`, tall = Math.round(m.maxAlt - m.minAlt), t = `${m.t.toFixed(1)} s`;
+  const extra = { loop: `${tall} m tall`, immel: `${Math.round(m.maxAlt - m.alt0)} m gained`, splits: `${Math.round(m.alt0 - m.minAlt)} m lost`, zoom: `${Math.round(m.maxAlt - m.alt0)} m gained`, dive: `${KT(m.maxV || 0)} kt max`, turn: `180° in ${t}`, barrel: `in ${t}` }[k];
+  return `${m.def.name} complete · ${g} · ${extra}`;
 }
 
 /* ============================================================
@@ -2691,8 +2853,8 @@ function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.cl
 function gameTouchdown(vs) {
   const p = game.player; if (p.gearT < 5.9) return gameCrash('Gear was up');
   if (vs > 5) return gameCrash('Touchdown at ' + vs.toFixed(1) + ' m/s');
-  const label = vs < 1.5 ? 'Butter' : vs < 3 ? 'Firm' : 'Hard';
-  toast(`${label} · ${vs.toFixed(1)} m/s`); game.landed = true;
+  toast(vs < 1.5 ? `Butter! ${vs.toFixed(1)} m/s` : vs < 3 ? `Firm landing · ${vs.toFixed(1)} m/s` : `Hard landing · ${vs.toFixed(1)} m/s`, 3200); game.landed = true;
+  if (typeof onTouchdownFX === 'function') onTouchdownFX(p, vs);
 }
 function gameCrash(reason) {
   const p = game.player; if (!p || p.crashing) return;
@@ -2880,6 +3042,10 @@ addEventListener('keydown', e => {
   const p = game.player;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
   if (e.repeat) return;
+  // overlays first: Esc / H close them, everything else is swallowed while they are open
+  if (e.code === 'Escape' && (guide.helpOpen || guide.tour)) { closeHelp(); endTour(); return; }
+  if (e.code === 'KeyH') { guide.helpOpen ? closeHelp() : openHelp(); return; }
+  if (guide.helpOpen || guide.tour) { keys[e.code] = false; return; }
   if (p && ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
     if (game.autoland && !['KeyW', 'KeyS'].includes(e.code)) { game.autoland = null; toast('Auto-land disengaged'); }
     if (p.taxi && ['KeyW', 'KeyS'].includes(e.code)) { p.taxi = null; toast('Auto-taxi cancelled'); }
@@ -2923,7 +3089,7 @@ function simStep(dt) {
     const towing = game.tow && !game.tow.done;
     if (towing) { /* placement handled by the tow */ }
     else {
-      if (p.maneuver) { if (p.maneuver.update(dt)) { const m = p.maneuver; p.maneuver = null; if (m.aborted) toast('Maneuver aborted (low altitude) — wings level'); } }
+      if (p.maneuver) { if (p.maneuver.update(dt)) { const m = p.maneuver; p.maneuver = null; if (m.aborted) toast('Maneuver aborted (low altitude) — wings level'); else { guide.maneuversDone++; toast(maneuverStats(m), 3600); } } }
       else if (game.autoland) { if (game.autoland.update(dt)) { game.autoland = null; game.landed = true; toast('Auto-land complete — Auto-taxi takes you to a stand'); } }
       else if (p.taxi) { p.input.pitch = p.input.roll = p.input.yaw = 0; if (p.taxi.update(dt)) p.taxi = null; }
       if (!p.taxi && !game.autoland) manualInputs(dt); // assists own the controls while active (keys cancel them)
@@ -2973,7 +3139,7 @@ function buildUI() {
   // maneuvers
   const mw = $('mans'); MANEUVERS.forEach((m, i) => { const b = document.createElement('button'); b.className = 'btn full'; b.style.textAlign = 'left'; b.innerHTML = `<span style="opacity:.5;margin-right:6px">${i + 1}</span>${m.name}`; b.onclick = () => startManeuver(i); mw.appendChild(b); });
   // flight
-  $('b-eng').onclick = () => { const p = game.player; if (!p) return; p.engineOn = !p.engineOn; if (p.engineOn) { p.parkedAtStand = p.parkedAtStand; toast('Engine start — beacon on, N1 spooling'); } refreshUI(); };
+  $('b-eng').onclick = () => { const p = game.player; if (!p) return; if (p.engineOn) { p.engineOn = false; refreshUI(); } else startEngine(p); };
   $('b-gear').onclick = () => { const p = game.player; if (!p) return; if (p.onGround && p.gearDown) { toast('Gear is locked on the ground'); return; } p.gearDown = !p.gearDown; refreshUI(); };
   $('b-lights').onclick = () => { const p = game.player; if (p) p.lightsOn = !p.lightsOn; refreshUI(); };
   $('b-brakes').onclick = () => { game.parkBrake = !game.parkBrake; refreshUI(); };
@@ -3012,16 +3178,28 @@ function buildPerfUI() {
     const el = document.createElement('div'); el.className = 'slider';
     el.innerHTML = `<div class="top"><span>${d.label}</span><b></b></div><input type="range" min="${min}" max="${max}" step="${d.step}"><div class="eff"></div>`;
     const inp = el.querySelector('input'); inp.value = d.k === 'run' ? ac.dv.pred : ac.perf[d.k]; d.el = el;
+    const snap = () => { if (guide.perfSnap?.k !== d.k || performance.now() - guide.perfT > 4000) guide.perfSnap = { k: d.k, m: perfMetrics(perfTarget()) }; };
+    inp.addEventListener('pointerdown', snap); inp.addEventListener('keydown', snap); inp.addEventListener('focus', snap);
     inp.addEventListener('input', () => {
       const a = perfTarget(), v = +inp.value;
       if (d.k === 'run') a.perf.a0 = a.solveA0ForRun(v); else a.perf[d.k] = v;
       a.derive(); if (!game.player) game.pendingPerf[a.key] = { ...a.perf };
-      updatePerfLabels(d.k);
+      updatePerfLabels(d.k); showPerfDiff(d.k);
     });
     w.appendChild(el);
   }
-  w.insertAdjacentHTML('beforeend', '<div class="note" id="perfwarn"></div>');
+  w.insertAdjacentHTML('beforeend', '<div class="note" id="perfwarn"></div><div id="perfdiff" aria-live="polite"></div>');
   updatePerfLabels();
+}
+// "What changed?" — the physical consequence of the slider you are moving, before → after
+function perfMetrics(a) { const P = a.perf, d = a.dv; return { run: d.pred, vr: d.Vr, top: P.Vmax, roll: d.maxR * R2D, thrust: d.T0 / d.m, ceil: P.ceiling, g: P.G }; }
+const PERF_EFFECT = { mass: ['run', 'vr'], a0: ['run', 'thrust'], Vr: ['run', 'vr'], Vmax: ['top', 'run'], ceiling: ['ceil'], handling: ['roll'], run: ['run', 'thrust'], G: ['g'] };
+const METRIC = { run: ['Takeoff run', v => fmt(v) + ' m', 1], vr: ['Rotate speed', v => KT(v) + ' kt', 1], top: ['Top speed', v => KT(v) + ' kt', -1], roll: ['Roll rate', v => fmt(v) + '°/s', -1], thrust: ['Thrust / weight', v => (v / G0).toFixed(2), -1], ceil: ['Ceiling', v => fmt(v) + ' m', -1], g: ['G-limit', v => v.toFixed(1) + ' g', -1] };
+function showPerfDiff(k) {
+  const el = $('perfdiff'); if (!el) return; if (!guide.perfSnap || guide.perfSnap.k !== k) guide.perfSnap = { k, m: perfMetrics(perfTarget()) };
+  const now = perfMetrics(perfTarget()), was = guide.perfSnap.m; guide.perfT = performance.now();
+  el.innerHTML = '<div class="t">What changed?</div>' + PERF_EFFECT[k].map(m => { const [name, f, worse] = METRIC[m], a = was[m], b = now[m], cls = Math.abs(b - a) < 1e-6 ? '' : (b - a) * worse > 0 ? 'up' : 'dn'; return `<div>${name} ${f(a)} → <b class="${cls}">${f(b)}</b></div>`; }).join('');
+  el.classList.add('on'); clearTimeout(showPerfDiff.h); showPerfDiff.h = setTimeout(() => el.classList.remove('on'), 6000);
 }
 function updatePerfLabels(skip = null) {
   const a = perfTarget(), P = a.perf, d = a.dv, R = a.M.perf;
@@ -3054,11 +3232,16 @@ function refreshUI() {
   $('b-lights').classList.toggle('on', !!p && p.lightsOn); $('b-brakes').classList.toggle('on', game.parkBrake);
   document.querySelectorAll('#flapbtns button').forEach(b => b.classList.toggle('on', !!p && +b.dataset.f === p.flaps));
   const goingStand = p && (game.landed || onRunway(p.pos)) && p.parkedAtStand == null;
-  $('b-taxi').textContent = p && p.taxi ? 'Stop taxi' : goingStand ? 'Taxi to stand' : 'Auto-taxi'; $('b-taxi').classList.toggle('on', !!(p && p.taxi));
+  $('b-taxi').textContent = p && p.taxi ? 'Stop taxi' : goingStand ? 'Taxi to stand' : 'Taxi to runway'; $('b-taxi').classList.toggle('on', !!(p && p.taxi));
   $('b-land').classList.toggle('on', !!game.autoland);
   $('b-ai').classList.toggle('on', ai.enabled);
   $('title').classList.toggle('compact', !!p || cam.mode !== 'orbit');
-  document.querySelectorAll('#mans button').forEach((b, i) => { const why = maneuverBlock(p, MANEUVERS[i]); b.disabled = !!why; if (why) b.dataset.tip = why; else delete b.dataset.tip; });
+  document.querySelectorAll('#mans button').forEach((b, i) => { // soft-disabled so the reason shows on hover; flash when one unlocks
+    const why = maneuverBlock(p, MANEUVERS[i]), was = b.classList.contains('dis');
+    b.classList.toggle('dis', !!why); b.setAttribute('aria-disabled', why ? 'true' : 'false');
+    if (why) b.dataset.tip = why; else delete b.dataset.tip;
+    if (was && !why && p && !p.onGround) { b.classList.remove('unlock'); void b.offsetWidth; b.classList.add('unlock'); }
+  });
   ['b-eng', 'b-gear', 'b-lights', 'b-brakes', 'b-taxi', 'b-land'].forEach(id => $(id).disabled = !p);
 }
 // HUD
@@ -3074,7 +3257,7 @@ function phaseOf(p) {
     if (onRunway(p.pos)) { if (game.landed && p.v > 12) return 'ROLLOUT'; if (vf >= 0.9 * p.dv.Vr) return 'ROTATE'; if (p.throttle > 0.6) return 'TAKEOFF ROLL'; if (Math.abs(wrapPI(p.headingRad - RWY_HDG)) < 0.2 && p.v < 3) return 'LINE-UP'; }
     return p.v < 0.5 && p.parkedAtStand != null ? 'PARKED' : 'TAXI';
   }
-  const appr = (p.gearDown || p.flaps >= 2) && p.vs < -0.5 && p.pos.x < -RW.len / 2 + 400 && p.pos.x > -RW.len / 2 - 6000;
+  const appr = (p.gearDown || p.flaps >= 2) && p.vs < -0.5 && p.airT > 25 && p.pos.x < -RW.len / 2 + 400 && p.pos.x > -RW.len / 2 - 6000;
   if (appr && p.agl < 15) return 'FLARE';
   if (appr || game.autoland) return 'APPROACH';
   if (p.vs > 2) return 'CLIMB';
@@ -3085,6 +3268,11 @@ function updateHUD() {
   if (!p) return;
   $('phase').textContent = phaseOf(p);
   $('h-spd').textContent = Math.round(p.ias); $('h-kt').textContent = Math.round(p.ias * 1.944) + ' kt';
+  { // target-speed marker: Vr on the takeoff roll, Vref on approach
+    const ph = phaseOf(p), roll = p.onGround && onRunway(p.pos) && !game.landed && (p.throttle > 0.5 || ph === 'LINE-UP'), appr = !p.onGround && (game.autoland || ph === 'APPROACH' || ph === 'FLARE');
+    const tgt = roll ? p.dv.Vr : appr ? 1.3 * p.dv.Vr : 0, bar = $('spdbar'); bar.classList.toggle('on', tgt > 0);
+    if (tgt > 0) { const full = tgt * 1.35; $('spdfill').style.width = clamp(p.ias / full, 0, 1) * 100 + '%'; $('spdmark').style.left = $('spdlbl').style.left = (100 / 1.35) + '%'; const lbl = `${roll ? 'Vr' : 'Vref'} ${KT(tgt)}`; if ($('spdlbl').textContent !== lbl) $('spdlbl').textContent = lbl; }
+  }
   $('h-alt').textContent = fmt(Math.max(0, p.agl - 0.2)); $('h-vs').textContent = (p.vs >= 0 ? '+' : '') + p.vs.toFixed(1);
   $('h-g').textContent = p.nLoad.toFixed(1); $('h-gl').textContent = 'lim ' + p.perf.G.toFixed(1);
   $('h-fg').textContent = `${['0', '1', '2', 'F'][p.flaps]} · ${p.gearT > 5.9 ? 'DN' : p.gearT < 0.1 ? 'UP' : 'TR'}`;
@@ -3202,6 +3390,196 @@ function initTouch() {
 }
 
 /* ============================================================
+   23b. In-game guide: contextual hint bar, onboarding tour, help overlay
+   ============================================================ */
+const K = k => `<kbd>${k}</kbd>`;
+const KT = ms => Math.round(ms * 1.944);
+const guide = { hintsOn: store.get('hints', true), cur: null, curHtml: '', el: null, t: 0, maneuversDone: 0, holdE: 0, log: null, lastHint: null, bottom: -1, tour: null, helpOpen: false, perfSnap: null, perfT: 0 };
+const done = (ok, html) => `<span class="${ok ? 'done' : ''}">${html}</span>`;
+function nearHold(p) { for (const k of 'ABCD') { const n = NODES['H' + k]; if (Math.abs(p.pos.x - n.x) < 16 && p.pos.z > HOLD_Z - 3 && p.pos.z < HOLD_Z + 26) return n; } return null; }
+function startEngine(p) { if (!p || p.engineOn) return; p.engineOn = true; toast('Engine start — beacon on, N1 spooling'); refreshUI(); }
+// The single next action for the current flight phase. Never empty: every branch returns a hint.
+function computeHint() {
+  const p = game.player;
+  if (!p) return { id: 'pick', html: `Pick a plane in the <b>Hangar</b> panel → <b>Roll out</b>` };
+  if (p.crashing) return { id: 'reset', html: `Resetting to the runway 09 threshold…`, tone: 'warn' };
+  const tow = game.tow && !game.tow.done ? game.tow : null;
+  if (tow && !tow.reverse) return { id: 'tow', html: `Your <b>${p.M.name}</b> is being towed out of Hangar 1 to stand ${(game.stand ?? 0) + 1}…`, prog: tow.t / tow.T };
+  if (tow) return { id: 'push', html: `Pushback · the tug turns you onto the apron lane, then auto-taxi takes over`, prog: tow.t / tow.T };
+  const d = p.dv, vf = p.vel.dot(_fw.set(1, 0, 0).applyQuaternion(p.q));
+  if (!p.onGround) {
+    guide.stallLatch = p.stall > 0.3 || (guide.stallLatch && p.stall > 0.08);
+    if (guide.stallLatch && !p.maneuver) return { id: 'stall', html: `⚠ Stall! Push nose down ${K('↑')} and add throttle ${K('W')}`, tone: 'warn' };
+    if (!game.autoland && !p.maneuver && p.agl > 25 && p.ias < 1.08 * d.Vr && p.vs < 1) return { id: 'lowspeed', html: `⚠ Low on speed — push nose down ${K('↑')} and add throttle ${K('W')}`, tone: 'warn' };
+    if (p.maneuver) return { id: 'man', html: `<b>${p.maneuver.def.name}</b> in progress · hands off, or press an arrow key to take over`, prog: p.maneuver.progress ? p.maneuver.progress() : null };
+    const ph = phaseOf(p);
+    if (game.autoland) return game.autoland.phase === 'flare' || ph === 'FLARE' ? { id: 'flare', html: `Auto-land flaring · throttle idle ${K('S')} · nose up slightly ${K('↓')}` } : { id: 'autoland', html: `<b>Auto-land</b> is flying the 3° glide slope to runway 09 · arrows take over` };
+    if (ph === 'FLARE') return { id: 'flare', html: `Throttle idle ${K('S')} · raise nose slightly ${K('↓')}`, tone: 'pulse' };
+    if (ph === 'APPROACH') return { id: 'approach', html: `Follow the glide slope · ${done(p.gearDown, `gear down ${K('G')}`)} · ${done(p.flaps === 3, `flaps <b>Full</b> ${K('F')}`)}` };
+    if ((p.gearDown || p.flaps > 0) && p.airT < 90 && p.vs > -1 && p.agl < 700) return { id: 'posclimb', html: `Positive climb · ${done(!p.gearDown, `raise gear ${K('G')}`)} · ${done(p.flaps === 0, `flaps up ${K('V')}`)}` };
+    if (p.agl < 300) return { id: 'climb300', html: `Climb above <b>300 m</b> to unlock maneuvers · ${Math.round(p.agl)} m`, prog: p.agl / 300 };
+    if (guide.maneuversDone >= 2 || p.airT > 240) return { id: 'back', html: `Line up with runway 09 · press <b>Auto-land</b> for help` };
+    return { id: 'cruise', html: `Try a maneuver ${K('1')}–${K('7')} · or press ${K('C')} for cameras` };
+  }
+  // on the ground
+  if (!p.engineOn) return { id: 'engine', html: `Press <b>Engine start</b> or hold ${K('E')}`, prog: guide.holdE > 0 ? guide.holdE / 0.6 : null };
+  if (p.n1 < 0.2) return { id: 'spool', html: `Engine starting… N1 ${Math.round(p.n1 * 100)}% · wait for idle (22%)`, prog: p.n1 / 0.2 };
+  if (p.taxi) {
+    if (p.taxi.stand !== null) return { id: 'taxi-stand', html: `Auto-taxi to stand ${p.taxi.stand + 1} · ${K('W')} / ${K('S')} take over` };
+    if (p.taxi.waiting) return { id: 'hold-traffic', html: `Hold · traffic on runway — auto-taxi continues when it is clear`, tone: 'warn' };
+    return { id: 'auto-taxi', html: `Auto-taxi to runway 09 · follow along on the yellow line · ${K('W')} / ${K('S')} take over` };
+  }
+  const aligned = Math.abs(wrapPI(p.headingRad - RWY_HDG)) < 0.25;
+  if (onRunway(p.pos)) {
+    if (game.landed) return p.v > 3 ? { id: 'rollout', html: `Brake ${K('B')} · then <b>Taxi to stand</b>` } : { id: 'to-stand', html: `Press <b>Taxi to stand</b> · or steer yourself with ${K('←')} ${K('→')} and ${K('W')}` };
+    if ((aligned || vf > 8) && vf >= 0.97 * d.Vr) return { id: 'rotate', html: `Pull back ${K('↓')} gently to lift off`, tone: 'pulse', prog: 1 };
+    if ((aligned || vf > 8) && p.throttle > 0.6 && vf > 1) return { id: 'roll', html: `Accelerating… rotate at <b>${KT(d.Vr)} kt</b> · ${KT(p.ias)} kt`, prog: p.ias / d.Vr };
+    if (aligned) return { id: 'lineup', html: `${done(p.flaps >= 1, `Set flaps <b>1</b> (${K('F')})`)} · ${done(!game.parkBrake && p.brakes < 0.5, `release brakes (${K('B')})`)} · ${done(p.throttle > 0.95, `full throttle ${K('W')}`)}` };
+  }
+  const hold = !game.landed && nearHold(p);
+  if (hold && p.v < 6) return runwayFreeFor(p) ? { id: 'hold-clear', html: `Runway is clear · press ${K('W')} to line up` } : { id: 'hold-traffic', html: `Hold · traffic on runway`, tone: 'warn' };
+  if ((p.parkedAtStand != null || game.stand !== null) && p.v < 1) return game.landed ? { id: 'to-stand', html: `Parked · press <b>Engine stop</b>, or <b>Taxi to runway</b> for another flight` } : { id: 'ready', html: `Press <b>Taxi to runway</b> or steer with ${K('←')} ${K('→')} and add a little throttle ${K('W')}` };
+  if (game.landed && p.v < 1) return { id: 'to-stand', html: `Press <b>Taxi to stand</b> · or steer yourself with ${K('←')} ${K('→')} and ${K('W')}` };
+  if (p.v > 15) return { id: 'taxi-fast', html: `Too fast for taxi — keep under 15 m/s · ${K('S')} idle · ${K('B')} brake`, tone: 'warn' };
+  return { id: 'taxi', html: `Keep speed under 15 m/s · follow the yellow line · ${K('B')} to brake` };
+}
+function renderHint(h) {
+  const bar = $('hintbar'), track = $('hb-track');
+  bar.classList.toggle('warn', h.tone === 'warn'); bar.classList.toggle('pulse', h.tone === 'pulse');
+  const prog = $('hb-prog'), show = h.prog !== null && h.prog !== undefined && isFinite(h.prog);
+  bar.classList.toggle('has-prog', show); if (show) { prog.firstChild.style.width = (clamp(h.prog, 0, 1) * 100).toFixed(1) + '%'; prog.classList.toggle('full', h.prog >= 1); }
+  if (h.id !== guide.cur) { // fade + slide between hints
+    const old = guide.el; if (old) { old.classList.add('leave'); setTimeout(() => old.remove(), 280); }
+    const el = document.createElement('div'); el.className = 'hint enter'; el.innerHTML = h.html; track.appendChild(el);
+    void el.offsetWidth; el.classList.remove('enter');
+    guide.el = el; guide.cur = h.id; guide.curHtml = h.html;
+    if (guide.log) guide.log.push({ t: +game.simT.toFixed(1), phase: game.player ? phaseOf(game.player) : '—', id: h.id, text: el.textContent, dbg: game.player ? [game.player.pos.x.toFixed(0), (game.player.pos.z - RW.z).toFixed(1), game.player.v.toFixed(1), game.player.onGround, game.player.agl.toFixed(2)].join(' ') : '' });
+  } else if (h.html !== guide.curHtml) { guide.el.innerHTML = h.html; guide.curHtml = h.html; }
+}
+function placeHintBar() { // sits above the HUD (or above the touch controls on phones)
+  let b = 22;
+  if (innerWidth < 700 && $('touch').classList.contains('on')) b = innerHeight - $('stick').getBoundingClientRect().top + 10;
+  else if (innerWidth < 700) b = innerHeight - $('panel').getBoundingClientRect().top + 8 + ($('hud').classList.contains('on') ? $('hud').offsetHeight + 8 : 0);
+  else if ($('hud').classList.contains('on')) b = 22 + $('hud').offsetHeight + 10;
+  if (b !== guide.bottom) { guide.bottom = b; $('hintbar').style.bottom = b + 'px'; $('hints-chip').style.bottom = b + 'px'; }
+}
+function updateGuide(dt, force = false) {
+  const p = game.player;
+  // hold E (engine off, on the ground) to start the engine
+  if (p && keys.KeyE && !p.engineOn && p.onGround && !(game.tow && !game.tow.done) && !guide.helpOpen && !guide.tour) { guide.holdE += dt; if (guide.holdE >= 0.6) { guide.holdE = 0; startEngine(p); } } else guide.holdE = 0;
+  guide.t += dt; if (!force && guide.t < 0.1) return; guide.t = 0;
+  const h = computeHint(); guide.lastHint = h;
+  $('hintbar').classList.toggle('off', !guide.hintsOn); $('hints-chip').classList.toggle('on', !guide.hintsOn);
+  renderHint(h); placeHintBar();
+}
+function setHints(on) { guide.hintsOn = on; store.set('hints', on); updateGuide(0, true); }
+
+/* ---------- onboarding tour (5 steps, spotlight) ---------- */
+const TOUR = [
+  { title: 'Welcome to Skyport', text: 'This is your airport. Drag to orbit, scroll to zoom.', rect: () => ({ left: 24, top: 96, width: Math.max(200, innerWidth - (innerWidth < 700 ? 48 : 316)), height: Math.max(160, (innerWidth < 700 ? innerHeight * 0.58 : innerHeight) - 220) }) },
+  { sel: '#s-hangar', title: 'The hangar', text: 'Choose a plane and roll it out.', before: () => $('s-hangar').classList.remove('closed') },
+  { sel: '#s-perf', title: 'Performance', text: 'Every slider changes the physics. Heavier means a longer takeoff run.', before: () => $('s-perf').classList.remove('closed') },
+  { sel: '#hintbar', title: 'Your co-pilot', text: 'Not sure what to do? The bar down here always shows your next step.', before: () => { if (!guide.hintsOn) setHints(true); } },
+  { sel: '#b-cam', title: 'Cameras', text: `Press ${K('C')} to switch cameras, ${K('I')} to inspect your plane.`, before: () => $('s-world').classList.remove('closed') },
+];
+function startTour() {
+  closeHelp(); guide.tour = { i: 0 }; const t = $('tour'); t.classList.add('on'); t.setAttribute('aria-hidden', 'false');
+  $('tour-dots').innerHTML = TOUR.map(() => '<i></i>').join(''); showTourStep();
+}
+function showTourStep() {
+  const T = guide.tour; if (!T) return; const st = TOUR[T.i];
+  if (st.before) st.before();
+  const el = st.sel ? document.querySelector(st.sel) : null; if (el) el.scrollIntoView({ block: 'nearest' });
+  $('tour-step').textContent = `Step ${T.i + 1} of ${TOUR.length}`; $('tour-title').textContent = st.title; $('tour-text').innerHTML = st.text;
+  $('tour-next').textContent = T.i === TOUR.length - 1 ? 'Done' : 'Next';
+  [...$('tour-dots').children].forEach((d, i) => d.classList.toggle('on', i === T.i));
+  layoutTour();
+}
+function layoutTour() {
+  const T = guide.tour; if (!T) return; const st = TOUR[T.i], el = st.sel ? document.querySelector(st.sel) : null;
+  const r = el ? el.getBoundingClientRect() : st.rect(), pad = el ? 6 : 0, spot = $('tour-spot'), card = $('tour-card');
+  spot.style.left = (r.left - pad) + 'px'; spot.style.top = (r.top - pad) + 'px'; spot.style.width = (r.width + pad * 2) + 'px'; spot.style.height = (r.height + pad * 2) + 'px';
+  spot.style.borderRadius = st.sel === '#hintbar' ? '999px' : '16px';
+  const cw = card.offsetWidth || 300, ch = card.offsetHeight || 170, m = 16; let x, y;
+  if (!el) { x = r.left + r.width / 2 - cw / 2; y = r.top + r.height / 2 - ch / 2; }
+  else if (r.left > innerWidth * 0.6 && innerWidth >= 700) { x = r.left - cw - 22; y = clamp(r.top, m, innerHeight - ch - m); }
+  else if (r.top > innerHeight * 0.55) { x = clamp(r.left + r.width / 2 - cw / 2, m, innerWidth - cw - m); y = r.top - ch - 22; }
+  else { x = clamp(r.left + r.width / 2 - cw / 2, m, innerWidth - cw - m); y = r.bottom + 22; }
+  card.style.left = clamp(x, m, innerWidth - cw - m) + 'px'; card.style.top = clamp(y, m, innerHeight - ch - m) + 'px';
+}
+function endTour() { if (!guide.tour) return; guide.tour = null; store.set('tourDone', true); const t = $('tour'); t.classList.remove('on'); t.setAttribute('aria-hidden', 'true'); }
+function tourNext() { const T = guide.tour; if (!T) return; if (T.i >= TOUR.length - 1) { endTour(); return; } T.i++; showTourStep(); }
+
+/* ---------- help overlay ---------- */
+const HELP_KEYS = { Escape: 'orbit', Digit1: 'man 1', Digit2: 'man 2', Digit3: 'man 3', Digit4: 'man 4', Digit5: 'man 5', Digit6: 'man 6', Digit7: 'man 7', KeyQ: 'rudder ←', KeyW: 'thrust +', KeyE: 'rudder → · start', KeyI: 'inspect', KeyS: 'thrust −', KeyF: 'flaps +', KeyG: 'gear', KeyH: 'help', KeyL: 'lights', KeyC: 'camera', KeyV: 'flaps −', KeyB: 'brakes', ArrowUp: 'nose down', ArrowDown: 'nose up', ArrowLeft: 'roll · steer', ArrowRight: 'roll · steer' };
+const ICON = { // small line drawings, stroke = currentColor
+  engine: '<svg viewBox="0 0 120 64" fill="none" stroke="#23221f" stroke-width="1.6" stroke-linecap="round"><circle cx="60" cy="32" r="20"/><circle cx="60" cy="32" r="5" fill="#c2562e" stroke="none"/><path d="M60 13v7M60 44v7M41 32h7M72 32h7M47 19l5 5M68 40l5 5M47 45l5-5M68 24l5-5" stroke="#8d897e"/><path d="M92 18a26 26 0 0 1 0 28" stroke="#c2562e"/><path d="M28 18a26 26 0 0 0 0 28" stroke="#c2562e"/></svg>',
+  taxi: '<svg viewBox="0 0 120 64" fill="none" stroke-linecap="round"><path d="M8 52 H60 Q84 52 84 30 V8" stroke="#e0ad2e" stroke-width="3" stroke-dasharray="6 5"/><g transform="translate(46 52) rotate(90)" fill="#23221f"><path d="M-9 0 L9 0 M0 -9 L0 9" stroke="#23221f" stroke-width="2.4"/><path d="M-3 -9 L3 -9 L0 -13Z"/></g><path d="M100 22l-6 6m0-12l6 6" stroke="#8d897e" stroke-width="1.6"/></svg>',
+  lineup: '<svg viewBox="0 0 120 64" fill="none" stroke-linecap="round"><rect x="6" y="18" width="108" height="28" rx="2" fill="#4a4a49"/><path d="M14 22v20M18 22v20M22 22v20" stroke="#f2f0e9" stroke-width="2"/><path d="M52 32h12M76 32h12M100 32h10" stroke="#f2f0e9" stroke-width="2"/><g fill="#fff"><path d="M30 32 L44 32" stroke="#fff" stroke-width="3"/><path d="M37 24 L37 40" stroke="#fff" stroke-width="2.4"/></g><path d="M47 32h3" stroke="#c2562e" stroke-width="2"/></svg>',
+  takeoff: '<svg viewBox="0 0 120 64" fill="none" stroke-linecap="round"><path d="M6 54H114" stroke="#8d897e" stroke-width="2"/><path d="M10 54 H58 Q78 54 104 22" stroke="#23221f" stroke-width="1.6" stroke-dasharray="4 4"/><g transform="translate(96 30) rotate(-38)"><path d="M-12 0H12M-2 -9L2 9M-11 -4L-9 4" stroke="#23221f" stroke-width="2.4"/></g><text x="56" y="47" font-size="9" font-family="Inter" fill="#c2562e">Vr</text></svg>',
+  fly: '<svg viewBox="0 0 120 64" fill="none" stroke-linecap="round"><path d="M10 50 H44 C56 50 64 46 66 36 C70 18 54 8 46 18 C38 28 56 50 76 50 H112" stroke="#23221f" stroke-width="1.8"/><path d="M106 46l6 4-6 4" stroke="#23221f" stroke-width="1.8"/><path d="M10 58H112" stroke="#8d897e" stroke-dasharray="2 4"/></svg>',
+  land: '<svg viewBox="0 0 120 64" fill="none" stroke-linecap="round"><rect x="56" y="50" width="58" height="8" rx="1" fill="#4a4a49"/><path d="M8 14 L66 50" stroke="#9a4bd0" stroke-width="1.4" stroke-dasharray="4 3"/><g transform="translate(30 28) rotate(32)"><path d="M-12 0H12M-2 -9L2 9M-11 -4L-9 4" stroke="#23221f" stroke-width="2.4"/></g><text x="16" y="44" font-size="9" font-family="Inter" fill="#9a4bd0">3°</text></svg>',
+};
+const MAN_SVG = { // maneuver path diagrams (side view unless noted), 86×64
+  barrel: '<path d="M6 40 C14 18 22 18 26 32 S38 50 44 32 S56 14 62 32 S74 48 80 30" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M76 26l4 4-5 2" stroke="#23221f" stroke-width="1.6" fill="none"/>',
+  loop: '<path d="M6 52 H36 C56 52 62 34 54 22 C46 10 26 14 28 30 C30 46 48 52 80 52" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M76 49l4 3-4 3" stroke="#23221f" stroke-width="1.6" fill="none"/><path d="M4 60H82" stroke="#8d897e" stroke-dasharray="2 3"/>',
+  splits: '<path d="M6 14 H40 C46 14 48 12 48 14 C64 14 70 30 60 42 C52 52 36 54 14 54" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M18 51l-4 3 4 3" stroke="#23221f" stroke-width="1.6" fill="none"/><text x="34" y="10" font-size="7" font-family="Inter" fill="#c2562e">½ roll</text>',
+  zoom: '<path d="M4 54 H22 C34 54 40 44 48 26 C52 18 58 12 66 12 H82" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M78 9l4 3-4 3" stroke="#23221f" stroke-width="1.6" fill="none"/>',
+  dive: '<path d="M4 12 H18 C26 12 30 16 36 24 L54 46 C60 54 66 56 82 56" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M78 53l4 3-4 3" stroke="#23221f" stroke-width="1.6" fill="none"/><text x="44" y="26" font-size="7" font-family="Inter" fill="#c2562e">30°</text>',
+  turn: '<path d="M14 54 H40 C66 54 70 10 40 10 H14" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M18 7l-4 3 4 3" stroke="#23221f" stroke-width="1.6" fill="none"/><text x="56" y="36" font-size="7" font-family="Inter" fill="#8d897e">top view</text>',
+  immel: '<path d="M6 54 H34 C56 54 62 36 56 24 C50 12 40 12 28 12 H10" stroke="#23221f" stroke-width="1.8" fill="none"/><path d="M14 9l-4 3 4 3" stroke="#23221f" stroke-width="1.6" fill="none"/><text x="18" y="24" font-size="7" font-family="Inter" fill="#c2562e">½ roll</text>',
+};
+function buildHelp() {
+  const key = (code, label, wide) => { const t = HELP_KEYS[code]; return `<div class="k ${t ? 'hl' : ''} ${wide ? 'w' : ''}">${label}${t ? `<small>${t}</small>` : ''}</div>`; };
+  const row = arr => `<div class="r">${arr.map(([c, l, w]) => key(c, l, w)).join('')}</div>`;
+  const L = s => [...s].map(ch => ['Key' + ch, ch]);
+  $('pane-controls').innerHTML = `<div class="kbwrap"><div class="kb">${row([['Escape', 'Esc', 1], ...'1234567890'.split('').map(n => ['Digit' + n, n])])}${row([['Tab', 'Tab', 1], ...L('QWERTYUIOP')])}${row([['Caps', 'Caps', 1], ...L('ASDFGHJKL')])}${row([['Shift', 'Shift', 1], ...L('ZXCVBNM')])}</div>
+    <div class="arrows"><div></div>${key('ArrowUp', '↑')}<div></div>${key('ArrowLeft', '←')}${key('ArrowDown', '↓')}${key('ArrowRight', '→')}</div></div>
+    <div class="legend">
+      <div>${K('W')}${K('S')} throttle up / down</div><div>${K('↑')}${K('↓')} pitch (↓ = nose up)</div><div>${K('←')}${K('→')} roll in the air · steer on the ground</div>
+      <div>${K('Q')}${K('E')} rudder · hold ${K('E')} to start the engine</div><div>${K('G')} gear · ${K('F')}${K('V')} flaps down / up</div><div>${K('B')} brakes · ${K('L')} lights</div>
+      <div>${K('1')}–${K('7')} maneuvers</div><div>${K('C')} camera · ${K('I')} inspect · ${K('Esc')} orbit</div><div>${K('H')} this help</div></div>
+    <div class="mouse"><div><h5>Mouse</h5>Drag to orbit · scroll to zoom · right-drag to pan<br>Hover anything for its name · click your plane to select<br>Double-click a plane to inspect it · click the tower for its camera</div>
+      <div><h5>Touch</h5>One finger orbits, pinch zooms<br>In flight: left stick = pitch &amp; roll, right slider = throttle<br>Panel buttons do everything the keys do</div></div>`;
+  const steps = [['engine', 'Start the engine', `Roll out a plane, then press <b>Engine start</b> (or hold ${K('E')}). Wait for N1 to settle at idle.`],
+    ['taxi', 'Taxi', `Press <b>Taxi to runway</b> for auto-taxi, or steer with ${K('←')}${K('→')} and a touch of ${K('W')}. Stay under 15 m/s.`],
+    ['lineup', 'Line up', `Stop on the centreline past the numbers. Flaps <b>1</b> (${K('F')}), release brakes (${K('B')}).`],
+    ['takeoff', 'Take off', `Full throttle ${K('W')}. At <b>Vr</b> pull ${K('↓')} gently. Positive climb: gear up ${K('G')}, flaps up ${K('V')}.`],
+    ['fly', 'Fly', `Above 300 m the maneuvers unlock: ${K('1')}–${K('7')}. Keep an eye on speed — the stall warning turns the bar red.`],
+    ['land', 'Land', `Line up with runway 09 and press <b>Auto-land</b>, or fly the glide slope yourself: gear down, flaps Full, idle in the flare.`]];
+  $('pane-fly').innerHTML = `<div class="steps">${steps.map(([ic, t, d], i) => `<div class="s">${ICON[ic]}<h5><span>${i + 1}</span>${t}</h5><p>${d}</p></div>`).join('')}</div>`;
+}
+function buildManeuverHelp() {
+  const p = game.player, ac = p || perfTarget();
+  $('pane-maneuvers').innerHTML = `<p style="font-size:11.5px;color:var(--ink2);margin-bottom:12px">Each maneuver is an autopilot program flying the real flight model. Arrow keys abort it. Speeds below are for your <b>${ac.M.name}</b>.</p><div class="mans">${MANEUVERS.map((m, i) => {
+    const who = m.aero ? 'Aerobatic types: Kestrel S, Swift 7 (airliners only with G-limit &gt; 4)' : 'All aircraft';
+    return `<div class="m"><svg viewBox="0 0 86 64">${MAN_SVG[m.key]}</svg><div><h5>${K(i + 1)} ${m.name}</h5><p class="req">≥ ${m.agl} m AGL · ≥ ${m.v.toFixed(1)}× Vr (${KT(m.v * ac.dv.Vr)} kt)</p><p>${who}</p></div></div>`; }).join('')}</div>`;
+}
+function openHelp(tab = 'controls') {
+  if (guide.tour) endTour();
+  if (!$('pane-controls').innerHTML) buildHelp();
+  buildManeuverHelp(); guide.helpOpen = true;
+  document.querySelectorAll('#help-tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('#help .pane').forEach(p => p.classList.toggle('on', p.dataset.pane === tab));
+  const h = $('help'); h.classList.add('on'); h.setAttribute('aria-hidden', 'false');
+}
+function closeHelp() { if (!guide.helpOpen) return; guide.helpOpen = false; const h = $('help'); h.classList.remove('on'); h.setAttribute('aria-hidden', 'true'); }
+function initGuide() {
+  $('hint-help').onclick = () => openHelp(); $('hint-close').onclick = () => setHints(false); $('hints-chip').onclick = () => setHints(true);
+  $('help-x').onclick = closeHelp; $('help-ok').onclick = closeHelp; $('help').addEventListener('click', e => { if (e.target === $('help')) closeHelp(); });
+  document.querySelectorAll('#help-tabs button').forEach(b => b.onclick = () => openHelp(b.dataset.tab));
+  $('b-help').onclick = () => openHelp(); $('b-tour').onclick = startTour;
+  $('tour-next').onclick = tourNext; $('tour-skip').onclick = endTour;
+  addEventListener('resize', () => { layoutTour(); guide.bottom = -1; });
+  updateGuide(0, true);
+  if (!/[?&]notour\b/.test(location.search)) setTimeout(maybeStartTour, 1100);
+}
+function maybeStartTour() { // first launch only; storage failures simply mean "show it"
+  if (!store.get('tourDone', false) && !guide.tour) { startTour(); return true; } return false;
+}
+window.__guide = { maybeStartTour, openHelp, closeHelp, startTour, endTour, tourNext, computeHint, update: () => updateGuide(0, true), get state() { return { tour: guide.tour ? guide.tour.i : null, help: guide.helpOpen, hints: guide.hintsOn, cur: guide.cur, text: guide.el ? guide.el.textContent : '' }; }, guide };
+
+/* ============================================================
    24. Main loop
    ============================================================ */
 let lastT = performance.now(), acc = 0, fpsAcc = 0, fpsN = 0, fps = 60, lowT = 0, uiT = 0, running = false;
@@ -3224,8 +3602,8 @@ function updateVisuals(dt) {
   const p = game.player;
   updateDetails(dt, world.time); updateHangars(dt); updateJetBridges(dt);
   if (p) { const far = p.pos.distanceTo(camera.position) > 1500 && cam.mode === 'orbit'; if (!p.lod) p.makeLOD(); p.detail.visible = !far; p.lod.visible = far; p.animate(dt, world.time); updateContactShadow(p); }
-  for (const a of ai.list) { const far = a.ac.pos.distanceTo(camera.position) > 1500; a.ac.detail.visible = !far; a.ac.lod.visible = far; if (!far && ai.enabled) a.ac.animate(dt, world.time); updateContactShadow(a.ac); }
-  updatePAPI(); updateFX(dt, p && !(game.tow && !game.tow.done) ? p : null); updateCamera(dt); updateShadowCam(); ACMAT.halo.uniforms.scale.value = canvas.height / (2 * Math.tan(camera.fov * D2R / 2)); ACMAT.halo.uniforms.gain.value = lerp(0.6, 1.3, world.night); updateHUD(); updateLandingLight(); updateAudio();
+  for (const a of ai.list) { const far = a.ac.pos.distanceTo(camera.position) > (cam.inspectAc === a.ac && cam.mode === 'inspect' ? 1e9 : 320); a.ac.detail.visible = !far; a.ac.lod.visible = far; if (!far && ai.enabled) a.ac.animate(dt, world.time); updateContactShadow(a.ac); }
+  updatePAPI(); updateFX(dt, p && !(game.tow && !game.tow.done) ? p : null); updateCamera(dt); updateShadowCam(); ACMAT.halo.uniforms.scale.value = canvas.height / (2 * Math.tan(camera.fov * D2R / 2)); ACMAT.halo.uniforms.gain.value = lerp(0.6, 1.3, world.night); updateHUD(); updateGuide(dt); updateLandingLight(); updateAudio();
   if (++hoverFrame % 3 === 0) doHover();
   uiT += dt; if (uiT > 0.25) { uiT = 0; refreshUI(); }
 }
@@ -3292,7 +3670,80 @@ const __test = {
     const entries = runwayLock.log.slice(logStart); game.player = saved;
     return { seconds, aiRunwayEntriesWhilePlayerOnRunway: entries.filter(e => e.playerOnRunway).length + violations, states: ai.list.map(x => x.state), ok: violations === 0 && !entries.some(e => e.playerOnRunway) };
   },
-  drawCalls() { renderer.info.autoReset = false; renderer.info.reset(); renderer.render(scene, camera); const main = renderer.info.render.calls; renderer.info.reset(); composer.render(); const total = renderer.info.render.calls; renderer.info.autoReset = true; return { mainPass: main, withShadowsAndPost: total }; },
+  // Drives a whole flight through the real UI paths (keys, panel actions) and logs the hint at every phase.
+  hintFlow(model = 'kestrel') {
+    const key = (code, down) => dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code }));
+    const tap = code => { key(code, true); key(code, false); };
+    const ALLOWED = { // flight phase (HUD) → acceptable hint ids
+      'ROLL-OUT': ['tow'], PUSHBACK: ['push'], PARKED: ['engine', 'ready', 'to-stand'], 'ENGINE START': ['spool', 'engine'],
+      TAXI: ['auto-taxi', 'taxi', 'taxi-fast', 'taxi-stand', 'hold-traffic', 'hold-clear', 'ready', 'to-stand', 'rollout'], 'LINE-UP': ['lineup', 'auto-taxi'], 'TAKEOFF ROLL': ['roll', 'lineup'], ROTATE: ['rotate', 'roll'],
+      CLIMB: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland'], CRUISE: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland'],
+      APPROACH: ['autoland', 'approach', 'flare'], FLARE: ['flare', 'autoland'], ROLLOUT: ['rollout', 'autoland', 'to-stand', 'taxi-stand'], RESET: ['reset'],
+    };
+    const wasAI = ai.enabled; ai.enabled = false; ai.list.forEach(a => a.ac.root.visible = false); // a quiet runway: this test is about the guide
+    guide.log = []; const log = guide.log, bad = [], seen = new Set(), saved = guide.hintsOn; guide.hintsOn = true;
+    let t = 0; const step = (sec, ctl) => { for (let s = 0; s < sec; s += DT) { if (ctl && ctl() === false) return true; simStep(DT); game.player && game.player.animate(DT, t); t += DT;
+      updateGuide(DT); if (guide.t === 0) { const p = game.player, ph = p ? phaseOf(p) : 'NONE', id = guide.cur, txt = guide.el ? guide.el.textContent.trim() : '';
+        seen.add(id); if (!txt) bad.push({ t: +t.toFixed(1), ph, err: 'empty hint' });
+        const ok = !p ? id === 'pick' : p.maneuver ? id === 'man' || id === 'stall' : (ALLOWED[ph] || []).includes(id);
+        if (!ok) bad.push({ t: +t.toFixed(1), ph, id, txt });
+        const fresh = computeHint(); if (fresh.id !== id) bad.push({ t: +t.toFixed(1), ph, err: 'stale', shown: id, now: fresh.id }); } } return false; };
+    if (game.player) { scene.remove(game.player.root); if (game.player.cshadow) scene.remove(game.player.cshadow); if (game.stand !== null) standOwner[game.stand] = null; game.player = null; game.stand = null; game.tow = null; game.autoland = null; }
+    guide.maneuversDone = 0; updateGuide(0, true); step(0.3);
+    rollOut(model); step(13, () => !game.tow || game.tow.done ? undefined : undefined);       // roll-out tow
+    step(1.5); key('KeyE', true); step(1.0); key('KeyE', false); step(6);                    // hold E → engine spools
+    autoTaxi(); const p = game.player;
+    step(400, () => { if (p.taxi === null && onRunway(p.pos)) return false; });              // pushback + auto-taxi + line-up
+    const lined = onRunway(p.pos) && Math.abs(wrapPI(p.headingRad)) < 0.2;
+    step(2); key('KeyW', true);                                                              // takeoff roll (W also releases the brakes)
+    // flying: the analogue stick path (same as the touch stick) with a gentle attitude-hold law
+    const fly = (wantPitch, wantBank = 0) => { touch.pitch = clamp(rateToInput(p, 'p', 1.2 * (wantPitch * D2R - p.pitchRad)), -1, 1); touch.roll = p.onGround ? 0 : clamp(rateToInput(p, 'r', 2 * (wantBank - p.bankRad)), -1, 1); };
+    let air = false;
+    step(90, () => { const vf = p.vel.dot(_fw.set(1, 0, 0).applyQuaternion(p.q)); if (vf >= p.dv.Vr) fly(7); if (!p.onGround && p.agl > 30) { air = true; return false; } });
+    step(3, () => fly(6)); tap('KeyG'); step(1, () => fly(6)); tap('KeyV'); step(1, () => fly(6)); tap('KeyV');   // positive climb: gear + flaps up
+    const vMan = 2.15 * p.dv.Vr;
+    step(240, () => { const want = p.agl < 560 ? (p.v > p.dv.Vr * 1.6 ? 9 : p.v > p.dv.Vr * 1.3 ? 6 : 3) : clamp(-p.vs * 0.8, -3, 3); fly(want); if (p.agl > 560 && p.v > vMan) return false; });
+    touch.pitch = 0; touch.roll = 0;
+    step(1); startManeuver(1); const looped = !!p.maneuver;                                     // loop
+    step(60, () => { if (!p.maneuver) return false; }); step(3);
+    toggleAutoland();                                                                        // auto-land
+    step(900, () => { if (!game.autoland && p.onGround) return false; });
+    const landed = game.landed && p.onGround; step(2);
+    autoTaxi(); step(500, () => { if (!p.taxi) return false; });                            // taxi to stand
+    step(2); key('KeyW', false);
+    const parked = p.parkedAtStand !== null && !p.engineOn;
+    guide.log = null; guide.hintsOn = saved; ai.enabled = wasAI; ai.list.forEach(a => a.ac.root.visible = wasAI);
+    const need = ['pick', 'tow', 'engine', 'spool', 'auto-taxi', 'lineup', 'roll', 'rotate', 'posclimb', 'climb300', 'man', 'autoland', 'taxi-stand'];
+    const missing = need.filter(id => !seen.has(id));
+    for (const e of log) console.log('[hint]', String(e.t).padStart(6), e.phase.padEnd(13), e.id.padEnd(12), e.text, e.dbg);
+    return { model, steps: log.length, lined, air, looped, landed, parked, missing, violations: bad.slice(0, 8), nViolations: bad.length, ok: !missing.length && !bad.length && lined && air && looped && landed && parked };
+  },
+  // Onboarding: opens on a clean localStorage, can be skipped, and does not reopen.
+  tourRuns() {
+    endTour(); store.del('tourDone');
+    const opened = maybeStartTour(), atStep = guide.tour ? guide.tour.i : null, visible = $('tour').classList.contains('on');
+    tourNext(); const advanced = guide.tour && guide.tour.i === 1;
+    endTour(); const closed = !guide.tour && !$('tour').classList.contains('on'), stored = store.get('tourDone', false);
+    const reopened = maybeStartTour(); if (reopened) endTour();
+    return { opened, atStep, visible, advanced, closed, stored, reopened, ok: opened && atStep === 0 && visible && advanced && closed && stored === true && !reopened };
+  },
+  // fps + draw calls in orbit, chase and night views (draw calls include shadow and post passes)
+  perf(frames = 4) {
+    const views = [], hadPlayer = !!game.player, tod = world.tod;
+    if (!game.player) { rollOut('meridian'); for (let i = 0; i < 1300; i++) simStep(DT); }
+    const measure = (name) => { updateVisuals(0.016); renderer.info.autoReset = false; renderer.info.reset(); composer.render(); const calls = renderer.info.render.calls, tris = renderer.info.render.triangles; renderer.info.autoReset = true;
+      const gl = renderer.getContext(), px = new Uint8Array(4), sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // readPixels blocks until the GPU is done
+      sync(); const t0 = performance.now(); for (let i = 0; i < frames; i++) { updateVisuals(1 / 60); composer.render(); sync(); } const ms = (performance.now() - t0) / frames;
+      views.push({ view: name, drawCalls: calls, triangles: tris, msPerFrame: +ms.toFixed(1), fps: +(1000 / ms).toFixed(1) }); };
+    setCamMode('orbit', { reset: true }); cam.trans = null; camera.position.copy(cam.orbitPos); controls.target.copy(cam.orbitTarget); controls.enabled = true; controls.update(); measure('orbit');
+    resetPlaneToThreshold(); setCamMode('chase'); for (let i = 0; i < 80; i++) updateVisuals(0.016); measure('chase');
+    applyTimeOfDay(1, false); onLightsChanged(); measure('night chase');
+    setCamMode('orbit', { reset: true }); for (let i = 0; i < 80; i++) updateVisuals(0.016); measure('night orbit');
+    applyTimeOfDay(tod, false); setCamMode('orbit', { reset: true });
+    for (const v of views) console.log('[perf]', JSON.stringify(v));
+    return { views, maxDrawCalls: Math.max(...views.map(v => v.drawCalls)), ok: views.every(v => v.drawCalls < 200) };
+  },
+  drawCalls() { renderer.info.autoReset = false; renderer.info.reset(); renderer.render(scene, camera); const main = renderer.info.render.calls, mainTris = renderer.info.render.triangles; renderer.info.reset(); composer.render(); const total = renderer.info.render.calls, tris = renderer.info.render.triangles; renderer.info.autoReset = true; return { mainPass: main, withShadowsAndPost: total, mainTriangles: mainTris, triangles: tris, ok: total < 200 }; },
   all() {
     const out = {};
     for (const m of MODEL_KEYS) { out['takeoff_' + m] = this.takeoff(m); out['maxSpeed_' + m] = this.maxSpeed(m); out['ceiling_' + m] = this.ceiling(m); }
@@ -3309,7 +3760,7 @@ const __test = {
 window.__test = __test; window.__game = game;
 // deterministic stepping for screenshots / verification in slow (software) renderers
 window.__advance = (sec, frames = 4) => { running = false; const per = sec / frames; for (let f = 0; f < frames; f++) { for (let t = 0; t < per; t += DT) simStep(DT); updateVisuals(per); } composer.render(); };
-window.__api = { rollOut, setCamMode, autoTaxi, toggleAutoland, startManeuver, applyTimeOfDay, resetPlaneToThreshold, cam, controls, camera, ai };
+window.__api = { scene, renderer, rollOut, setCamMode, autoTaxi, toggleAutoland, startManeuver, applyTimeOfDay, resetPlaneToThreshold, cam, controls, camera, ai };
 window.__resume = () => { if (!running) { running = true; lastT = performance.now(); requestAnimationFrame(frame); } };
 window.__prof = () => { const T = {}, t = (k, f) => { const a = performance.now(); f(); T[k] = +(performance.now() - a).toFixed(1); };
   t('sim', () => { for (let i = 0; i < 4; i++) simStep(DT); }); t('details', () => { updateDetails(0.016, world.time); updateHangars(0.016); updateJetBridges(0.016); });
@@ -3332,7 +3783,7 @@ function boot() {
     buildTerrain(); buildAirfield(); buildGraph(); buildTerminal(); buildTower(); buildHangars(); buildDetails(); buildJetBridges(); buildAO();
     flushStatics(diorama);
     applyTimeOfDay(+$('tod').value, false); rebuildEnvironment(); onLightsChanged();
-    initFX(); initAI(); buildUI(); initTouch(); onResize();
+    initFX(); initAI(); buildUI(); initGuide(); initTouch(); onResize();
     renderThumbnails();
     controls.target.copy(cam.orbitTarget); camera.position.copy(cam.orbitPos); controls.update();
     running = true; requestAnimationFrame(t => { lastT = t; frame(t); });

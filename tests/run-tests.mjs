@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSkyport, here } from './lib.mjs';
 
-const { page, errors, close } = await openSkyport();
+const { page, errors, close } = await openSkyport({ query: '?notour' });
 
 const results = await page.evaluate(() => window.__test.all());
 let failed = 0;
@@ -18,6 +18,12 @@ for (const [k, v] of Object.entries(results)) {
 const ai = await page.evaluate(() => window.__test.aiRunway(900));
 console.log(`${ai.ok ? 'PASS' : 'FAIL'}  aiRunway               ${JSON.stringify(ai)}`); if (!ai.ok) failed++;
 
+// v2 guide + performance checks
+const report = (name, v) => { const ok = v.ok !== false; if (!ok) failed++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${name.padEnd(22)} ${JSON.stringify(v)}`); };
+page.on('console', m => { const t = m.text(); if (t.startsWith('[hint]') || t.startsWith('[perf]')) console.log('      ' + t); });
+report('hintFlow', await page.evaluate(() => window.__test.hintFlow('kestrel')));
+report('tourRuns', await page.evaluate(() => window.__test.tourRuns()));
+report('perf', await page.evaluate(() => window.__test.perf()));
 if (process.argv.includes('--shots')) {
   const out = path.join(here, 'shots'); fs.mkdirSync(out, { recursive: true });
   for (const m of ['meridian', 'atlas', 'swift', 'kestrel']) {
@@ -32,4 +38,16 @@ if (process.argv.includes('--shots')) {
 }
 console.log(errors.length ? `console errors:\n  ${errors.join('\n  ')}` : 'no console errors');
 await close();
+{ // the real first launch: fresh storage → tour opens; Skip; reload → it stays closed
+  const { page: p2, errors: e2, close: c2 } = await openSkyport();
+  await p2.waitForFunction(() => window.__guide.state.tour === 0, null, { timeout: 30000 }).catch(() => {});
+  const first = await p2.evaluate(() => window.__guide.state.tour);
+  await p2.click('#tour-skip');
+  await p2.reload(); await p2.waitForFunction(() => window.__ready, null, { timeout: 180000 }); await p2.waitForTimeout(2500);
+  const again = await p2.evaluate(() => window.__guide.state.tour);
+  report('tourFirstLaunch', { openedOnFirstLaunch: first === 0, reopenedAfterReload: again !== null, ok: first === 0 && again === null && !e2.length });
+  await c2();
+}
+
+
 process.exit(failed || errors.length ? 1 : 0);
