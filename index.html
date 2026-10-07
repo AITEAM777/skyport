@@ -4237,7 +4237,7 @@ const __test = {
     const APPR = ['appr-align', 'appr-gear', 'appr-fast', 'appr-high', 'appr-low', 'appr-flaps', 'appr-sink', 'appr-slow', 'approach', 'flare'];
     const ALLOWED = { // flight phase (HUD) → acceptable hint ids
       'ROLL-OUT': ['tow'], PUSHBACK: ['push'], PARKED: ['engine', 'ready', 'to-stand'], 'ENGINE START': ['spool', 'engine'],
-      TAXI: ['auto-taxi', 'taxi', 'taxi-fast', 'taxi-stand', 'hold-traffic', 'hold-clear', 'ready', 'to-stand', 'rollout'], 'LINE-UP': ['lineup', 'auto-taxi'], 'TAKEOFF ROLL': ['roll', 'lineup'], ROTATE: ['rotate', 'roll'],
+      TAXI: ['auto-taxi', 'engine', 'taxi', 'taxi-fast', 'taxi-stand', 'hold-traffic', 'hold-clear', 'ready', 'to-stand', 'rollout'], 'LINE-UP': ['lineup', 'auto-taxi'], 'TAKEOFF ROLL': ['roll', 'lineup'], ROTATE: ['rotate', 'roll'],
       CLIMB: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland', 'edge', ...APPR], CRUISE: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland', 'edge', ...APPR],
       APPROACH: ['autoland', 'approach', 'flare', ...APPR], FLARE: ['flare', 'autoland', ...APPR], ROLLOUT: ['rollout', 'autoland', 'to-stand', 'taxi-stand'], LANDED: ['to-stand', 'rollout', 'taxi-stand', 'autoland'], RESET: ['reset'],
     };
