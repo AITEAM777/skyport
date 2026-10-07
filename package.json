@@ -1,0 +1,11 @@
+{
+  "name": "skyport",
+  "private": true,
+  "description": "Interactive procedural 3D airport diorama with flyable aircraft (single index.html, three.js r165).",
+  "scripts": {
+    "start": "npx http-server . -p 8080",
+    "test": "node tests/run-tests.mjs",
+    "test:shots": "node tests/run-tests.mjs --shots"
+  },
+  "devDependencies": { "playwright": "^1.56.0" }
+}
