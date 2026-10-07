@@ -1,0 +1,67 @@
+PASS  takeoff_meridian       {"model":"meridian","predicted":1267,"measured":1269,"ratio":1.002,"ok":true}
+PASS  maxSpeed_meridian      {"model":"meridian","Vmax":235,"measured":239.1,"err":"1.74%","ok":true}
+PASS  ceiling_meridian       {"model":"meridian","ceiling":12500,"start":12125,"climbRate":-28.65,"ok":true}
+PASS  takeoff_atlas          {"model":"atlas","predicted":1206,"measured":1208,"ratio":1.001,"ok":true}
+PASS  maxSpeed_atlas         {"model":"atlas","Vmax":225,"measured":228.9,"err":"1.73%","ok":true}
+PASS  ceiling_atlas          {"model":"atlas","ceiling":12000,"start":11640,"climbRate":-29.02,"ok":true}
+PASS  takeoff_swift          {"model":"swift","predicted":582,"measured":583,"ratio":1.001,"ok":true}
+PASS  maxSpeed_swift         {"model":"swift","Vmax":250,"measured":254.4,"err":"1.76%","ok":true}
+PASS  ceiling_swift          {"model":"swift","ceiling":15000,"start":14550,"climbRate":-17.54,"ok":true}
+PASS  takeoff_kestrel        {"model":"kestrel","predicted":112,"measured":111,"ratio":0.994,"ok":true}
+PASS  maxSpeed_kestrel       {"model":"kestrel","Vmax":105,"measured":106.7,"err":"1.62%","ok":true}
+PASS  ceiling_kestrel        {"model":"kestrel","ceiling":5500,"start":5335,"climbRate":-5.4,"ok":true}
+PASS  paramEffect            {"model":"meridian","run1":1269,"run2":6172,"climb1":13.8,"climb2":-16.2,"ok":true}
+PASS  maneuver_kestrel_1     {"model":"kestrel","maneuver":"Barrel roll","completed":true,"aborted":false,"time":4,"roll":1,"height":1,"nan":false,"ok":true}
+PASS  maneuver_kestrel_2     {"model":"kestrel","maneuver":"Loop","completed":true,"aborted":false,"time":12.4,"roll":0,"height":239,"nan":false,"ok":true}
+PASS  maneuver_kestrel_3     {"model":"kestrel","maneuver":"Split-S","completed":true,"aborted":false,"time":10.2,"roll":0.1,"height":202,"nan":false,"ok":true}
+PASS  maneuver_kestrel_4     {"model":"kestrel","maneuver":"Zoom climb","completed":true,"aborted":false,"time":22.4,"roll":0,"height":540,"nan":false,"ok":true}
+PASS  maneuver_kestrel_5     {"model":"kestrel","maneuver":"Dive","completed":true,"aborted":false,"time":17.1,"roll":0,"height":0,"nan":false,"ok":true}
+PASS  maneuver_kestrel_6     {"model":"kestrel","maneuver":"Steep turn 180°","completed":true,"aborted":false,"time":19.1,"roll":0.2,"height":0,"nan":false,"ok":true}
+PASS  maneuver_kestrel_7     {"model":"kestrel","maneuver":"Immelmann","completed":true,"aborted":false,"time":8.2,"roll":1,"height":240,"nan":false,"ok":true}
+PASS  maneuver_meridian_1    {"model":"meridian","maneuver":"Barrel roll","completed":true,"aborted":false,"time":16.2,"roll":-0.9,"height":12,"nan":false,"ok":true}
+PASS  maneuver_meridian_2    {"model":"meridian","maneuver":"Loop","blocked":"Not certified for aerobatics"}
+PASS  maneuver_meridian_3    {"model":"meridian","maneuver":"Split-S","blocked":"Not certified for aerobatics"}
+PASS  maneuver_meridian_4    {"model":"meridian","maneuver":"Zoom climb","completed":true,"aborted":false,"time":41.1,"roll":0,"height":2043,"nan":false,"ok":true}
+PASS  maneuver_meridian_5    {"model":"meridian","maneuver":"Dive","completed":true,"aborted":false,"time":29.3,"roll":0,"height":0,"nan":false,"ok":true}
+PASS  maneuver_meridian_6    {"model":"meridian","maneuver":"Steep turn 180°","completed":true,"aborted":false,"time":37.3,"roll":0.2,"height":4,"nan":false,"ok":true}
+PASS  maneuver_meridian_7    {"model":"meridian","maneuver":"Immelmann","blocked":"Not certified for aerobatics"}
+PASS  loopScaling            {"model":"kestrel","base":228,"faster":296,"lowerG":333,"ok":true}
+PASS  landing_meridian       {"model":"meridian","touchdownVs":0.87,"centreline":-0.2,"crashed":null,"ok":true}
+PASS  landing_atlas          {"model":"atlas","touchdownVs":0.48,"centreline":0,"crashed":null,"ok":true}
+PASS  landing_swift          {"model":"swift","touchdownVs":0.59,"centreline":0,"crashed":null,"ok":true}
+PASS  landing_kestrel        {"model":"kestrel","touchdownVs":0.6,"centreline":0,"crashed":null,"ok":true}
+PASS  drawCalls              {"mainPass":131,"withShadowsAndPost":145,"mainTriangles":1060028,"triangles":1060042,"ok":true}
+PASS  aiRunway               {"seconds":900,"aiRunwayEntriesWhilePlayerOnRunway":0,"states":["hold","parked","lap"],"ok":true}
+      [hint]    0.8 ROLL-OUT      tow          Your Kestrel S is being towed out of Hangar 1 to stand 3… 540 300.0 0.0 true 0.00
+      [hint]    9.4 PARKED        engine       Press Engine start or hold E -100 327.5 0.0 true -0.17
+      [hint]     16 ENGINE START  spool        Engine starting… N1 1% · wait for idle (22%) -100 327.5 0.0 true -0.18
+      [hint]   19.1 PARKED        ready        Press Taxi to runway or steer with ← → and add a little throttle W -100 327.5 0.0 true -0.18
+      [hint]   22.4 PUSHBACK      push         Pushback · the tug turns you onto the apron lane, then auto-taxi takes over -100 327.4 0.0 true -0.18
+      [hint]   35.4 TAXI          auto-taxi    Auto-taxi to runway 09 · follow along on the yellow line · W / S take over -45 205.0 0.0 true -0.17
+      [hint]  129.6 LINE-UP       lineup       Set flaps 1 (F) · release brakes (B) · full throttle W -790 0.0 0.5 true -0.18
+      [hint]  133.2 TAKEOFF ROLL  roll         Accelerating… rotate at 60 kt · 2 kt -789 0.0 1.0 true -0.18
+      [hint]  140.7 ROTATE        rotate       Pull back ↓ gently to lift off -680 -0.5 30.1 true -0.14
+      [hint]  143.2 CRUISE        flare        Flare: throttle idle S · raise the nose slightly ↓ -592 -0.9 39.5 false 0.04
+      [hint]  147.5 CLIMB         posclimb     Positive climb · raise gear G · flaps up V -396 -1.7 50.6 false 14.16
+      [hint]  154.4 CLIMB         climb300     Climb above 300 m to unlock maneuvers · 55 m -8 -3.5 61.1 false 55.29
+      [hint]  181.5 CLIMB         cruise       Try a maneuver 1–7 · or press C for cameras 2064 -12.7 86.5 false 301.04
+      [hint]  205.6 LOOP          man          Loop in progress · hands off, or press an arrow key to take over 4187 -22.1 90.7 false 574.44
+      [hint]  218.1 CRUISE        cruise       Try a maneuver 1–7 · or press C for cameras 4633 -24.1 105.0 false 520.43
+      [hint]  221.2 APPROACH      autoland     Auto-land is flying the 3° glide slope to runway 09 · arrows take over 4952 -25.5 105.2 false 528.88
+      [hint]    733 FLARE         flare        Auto-land flaring · throttle idle S · nose up slightly ↓ -883 -0.0 40.3 false 14.87
+      [hint]  744.4 ROLLOUT       rollout      Touchdown! Throttle to zero S · hold the brakes B · stay on the centreline -452 -0.0 32.6 true 0.00
+      [hint]  751.4 ROLLOUT       taxi-stand   Auto-taxi to stand 3 · W / S take over -314 0.0 13.0 true -0.18
+      [hint]  827.6 PARKED        engine       Press Engine start or hold E -100 325.7 0.4 true -0.18
+PASS  hintFlow               {"model":"kestrel","steps":20,"lined":true,"air":true,"looped":true,"landed":true,"parked":true,"missing":[],"violations":[],"nViolations":0,"ok":true}
+PASS  tourRuns               {"opened":true,"atStep":0,"visible":true,"advanced":true,"closed":true,"stored":true,"reopened":false,"ok":true}
+PASS  manualLanding          {"model":"swift","card":"Butter!","reason":"Butter!96/100 Touchdown0.6 m/s Runway 09516 m in · 66 m past the zone Centrelineon it Rollout571 m to a stop ★ New best for this planePractice againClose","rating":"Butter","score":96,"vs":0.59,"tdz":66,"centreline":0,"crashed":false,"stopped":true,"coachedHints":["appr-flaps","appr-gear","approach","flare"],"ok":true}
+PASS  landingCrashes         {"gearUp":{"crashed":true,"card":true},"hard":{"crashed":true,"card":true},"ok":true}
+PASS  world                  {"minH":-38,"noVoid":true,"peak":2212,"seaDepth":-38,"strip":[47.36,47.36,47.36],"field":0,"wrapped":true,"clipLevels":7,"streamed":[1164,111,0],"ok":true}
+      [perf] {"view":"orbit","drawCalls":149,"triangles":1108252,"msPerFrame":1558.6,"fps":0.6}
+      [perf] {"view":"chase","drawCalls":183,"triangles":1047778,"msPerFrame":1750.1,"fps":0.6}
+      [perf] {"view":"night chase","drawCalls":181,"triangles":1031920,"msPerFrame":1862.7,"fps":0.5}
+      [perf] {"view":"night orbit","drawCalls":153,"triangles":1108776,"msPerFrame":1524.1,"fps":0.7}
+PASS  perf                   {"views":[{"view":"orbit","drawCalls":149,"triangles":1108252,"msPerFrame":1558.6,"fps":0.6},{"view":"chase","drawCalls":183,"triangles":1047778,"msPerFrame":1750.1,"fps":0.6},{"view":"night chase","drawCalls":181,"triangles":1031920,"msPerFrame":1862.7,"fps":0.5},{"view":"night orbit","drawCalls":153,"triangles":1108776,"msPerFrame":1524.1,"fps":0.7}],"maxDrawCalls":183,"ok":true}
+no console errors
+PASS  tourFirstLaunch        {"openedOnFirstLaunch":true,"reopenedAfterReload":false,"ok":true}
+exit=0

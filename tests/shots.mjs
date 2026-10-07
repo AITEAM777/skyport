@@ -65,5 +65,18 @@ if (extra) {
   await page.waitForTimeout(500);
   await shot('09_tour_step1');
 }
+if (process.argv.includes('--world')) { // v3: open world, landing, extras
+  await ev(() => { window.__api.applyTimeOfDay(0.33, false); window.__guide.closeHelp(); window.__guide.endTour(); });
+  await ev(() => { window.__setOrbit([2500, 1400, 4500], [0, 0, -2000]); window.__advance(1, 2); }); await shot('10_world_overview');
+  await ev(() => { window.__setOrbit([1500, 600, 7500], [1000, 0, 4800]); window.__advance(1, 2); }); await shot('11_world_coast');
+  await ev(() => { window.__setOrbit([-3000, 900, -5000], [-1500, 600, -9500]); window.__advance(1, 2); }); await shot('12_world_mountains');
+  await ev(() => { window.__setOrbit([-4800, 300, -5350], [-5200, 60, -5600]); window.__advance(1, 2); }); await shot('13_grass_strip');
+  await ev(() => { document.getElementById('b-practice').click(); window.__advance(2, 4); }); await shot('14_practice_approach');
+  await ev(() => { window.__test.manualLanding('swift'); window.__api.setCamMode('chase'); window.__advance(0.6, 2); }); await shot('15_landing_card');
+  await ev(() => { window.__guide.openHelp('landing'); }); await page.waitForTimeout(600); await shot('16_help_landing'); await ev(() => window.__guide.closeHelp());
+  await ev(() => { document.getElementById('c-rings').click(); for (let i = 0; i < 8; i++) window.__advance(1.5, 2); }); await shot('17_rings_minimap');
+  await ev(() => { document.getElementById('c-stop').click(); document.querySelector('#weather [data-w=rain]').click(); window.__api.resetPlaneToThreshold(); window.__api.setCamMode('chase'); window.__advance(2, 6); }); await shot('18_rain');
+  await ev(() => { document.querySelector('#weather [data-w=clear]').click(); document.getElementById('b-photo').click(); window.__advance(1.2, 3); }); await shot('19_photo_mode');
+}
 console.log(errors.length ? 'console errors:\n  ' + errors.join('\n  ') : 'no console errors');
 await close();

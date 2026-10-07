@@ -1,5 +1,67 @@
 # Changelog
 
+## v3: open world + landing
+
+Screenshots: `docs/screenshots/v3/`. The test log is saved next to them as `tests.txt`.
+
+### Open world
+- **The diorama block is gone.** Terrain is now a GPU clipmap: 7 nested level-of-detail rings that follow the camera.
+  - Height, normals and biome masks come from one noise function, written twice: in JS and as an exact GLSL copy.
+    Physics and the picture therefore always agree.
+  - Flying range is about 30 km in every direction.
+- **Biomes:**
+  - mown fields and farmland around the airport;
+  - forests and hills, rising to rock and snow-capped mountains in the north (peaks ~2.2 km);
+  - beaches and the ocean in the south;
+  - a river, a lake, and three villages linked by country roads.
+- **Ocean:** a water shader with layered waves, sun glint, depth tint and shore foam. There are islands offshore.
+- **Trees and rocks** stream in per 300 m cell as instanced meshes, and are cached as you fly.
+- **Sky and clouds:** the horizon blends into the fog colour, and endless cloud layers at several heights can be
+  flown through.
+- **World edge:** past ~30 km the hint bar says to turn back. Further out the world wraps around behind a fade.
+
+### Landing
+- **Hand-flown landings work end to end:** touchdown detection, gear, descent and braking, plus ground spoilers on
+  touchdown.
+- **Result card:**
+  - shows touchdown vertical speed, distance past the touchdown zone, centreline offset and rollout distance;
+  - gives a score out of 100 and a rating: Butter / Good / Firm / Hard;
+  - keeps a best score per plane.
+- **Crashes:** a hard touchdown (≥ 3 m/s), a gear-up landing or a splashdown is a crash, with a reset card.
+- **Approach aids:** PAPI and approach lights at both runway ends, plus a HUD glide-slope indicator that you can
+  switch off.
+- **Practice landing** (ASSIST panel): a 5 km final for runway 09.
+- **Guide:**
+  - a new Help → Landing tab (7 illustrated steps, PAPI diagram, practice button);
+  - a "Learn to land" tour step;
+  - context hints on approach: "Gear is up!", "Too fast", "Too high — reduce power", flap steps and the flare call.
+
+### Extras
+- **Second airfield:** a grass strip about 7.6 km north-west of the main field, with its own landing card.
+- **Weather** (World panel): clear, crosswind (9 m/s with gusts), rain (streaks, low cloud, dim sun) and fog
+  (~2 km visibility).
+  - Wind is real in the physics: aerodynamics use the airspeed relative to the air mass.
+  - Auto-land now tracks the ground track, so it crabs and stays on the centreline in a crosswind.
+- **Minimap** (`M`): it draws itself progressively and shows the planes, the airfields and the rings.
+- **Challenges:**
+  - a timed 9-ring course;
+  - "Fly to the grass strip".
+
+  Best times and scores are kept in localStorage.
+- **Photo mode** (`P`): hides the UI, freezes the sim, free orbit camera, save a PNG.
+- **Not done:** seaplane water landing. Touching down on water is a crash.
+
+### Verification
+- All earlier checks still pass. New checks:
+  - `__test.manualLanding()`: a hand-flown approach on the real controls. Result: Butter, 0.6 m/s, 66 m past the
+    zone, on the centreline.
+  - `__test.landingCrashes()`: gear-up and hard touchdowns crash.
+  - `__test.world()`: no holes in the terrain, the sea floor, the strip is level, the wrap works, trees stream in.
+- Draw calls stay under 200 in every view (max 183).
+- Performance caveat: the headless test browser renders on the CPU (SwiftShader, no GPU). There, a frame takes about
+  1.6 s, against about 0.9 s in v2. The added cost is the terrain vertex shader (~66k vertices), which a real GPU
+  handles easily. The 60 fps target still needs a check on real hardware.
+
 ## v2: polish + guide
 
 Before/after comparisons: `docs/screenshots/compare/`. Full sets: `docs/screenshots/before/` and

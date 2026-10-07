@@ -23,6 +23,9 @@ const report = (name, v) => { const ok = v.ok !== false; if (!ok) failed++; cons
 page.on('console', m => { const t = m.text(); if (t.startsWith('[hint]') || t.startsWith('[perf]')) console.log('      ' + t); });
 report('hintFlow', await page.evaluate(() => window.__test.hintFlow('kestrel')));
 report('tourRuns', await page.evaluate(() => window.__test.tourRuns()));
+report('manualLanding', await page.evaluate(() => window.__test.manualLanding('swift')));
+report('landingCrashes', await page.evaluate(() => window.__test.landingCrashes()));
+report('world', await page.evaluate(() => window.__test.world()));
 report('perf', await page.evaluate(() => window.__test.perf()));
 if (process.argv.includes('--shots')) {
   const out = path.join(here, 'shots'); fs.mkdirSync(out, { recursive: true });
