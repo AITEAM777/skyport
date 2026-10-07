@@ -264,7 +264,7 @@ kbd{display:inline-flex;align-items:center;justify-content:center;min-width:21px
   <div class="eyebrow">MATERIAL STUDIES · AVIATION</div>
   <h1>Skyport.</h1>
   <div class="rule"></div>
-  <p>A small airfield on a cut-out block of land. Pick a plane, tune it, fly it, bring it home.</p>
+  <p>A small airfield in an open valley between the mountains and the sea. Pick a plane, tune it, fly anywhere, bring it home.</p>
 </div>
 <div id="pill">WebGL – · r– · – fps</div>
 <button class="btn" id="mute" title="Engine sound">Sound: off</button>
@@ -436,7 +436,7 @@ composer.addPass(new OutputPass());
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.07;
-controls.minDistance = 80; controls.maxDistance = 3000; controls.maxPolarAngle = 1.45;
+controls.minDistance = 80; controls.maxDistance = 6000; controls.maxPolarAngle = 1.45;
 controls.target.set(-40, 0, -60);
 controls.screenSpacePanning = false;
 
@@ -445,7 +445,8 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 const envScene = new RoomEnvironment();
 envScene.children.filter(o => o.isMesh && o.material.side === THREE.BackSide).forEach(o => envScene.remove(o)); // drop the room walls
 envScene.traverse(o => { if (o.isMesh && o.material.isMeshBasicMaterial) o.material.color.multiplyScalar(0.06); }); // soften the studio panels
-function skyGain(s, g) { s.material.uniforms.skyGain = { value: g }; s.material.fragmentShader = s.material.fragmentShader.replace('uniform vec3 up;', 'uniform vec3 up;\nuniform float skyGain;').replace('gl_FragColor = vec4( retColor, 1.0 );', 'gl_FragColor = vec4( retColor * skyGain, 1.0 );'); }
+function skyGain(s, g) { s.material.uniforms.skyGain = { value: g }; s.material.uniforms.skyFog = { value: new THREE.Color() }; s.material.uniforms.skyFogK = { value: 0 };
+  s.material.fragmentShader = s.material.fragmentShader.replace('uniform vec3 up;', 'uniform vec3 up;\nuniform float skyGain; uniform vec3 skyFog; uniform float skyFogK;').replace('gl_FragColor = vec4( retColor, 1.0 );', 'gl_FragColor = vec4( mix(retColor * skyGain, skyFog, (1.0 - smoothstep(-0.03, 0.2, direction.y)) * skyFogK), 1.0 ); // horizon melts into the fog'); }
 const envSky = new Sky(); envSky.scale.setScalar(80); skyGain(envSky, 0.35); envScene.add(envSky);
 let envRT = null;
 scene.environmentIntensity = 0.5;
@@ -489,7 +490,8 @@ function applyTimeOfDay(t, rebuildEnv = true) {
   sun.color.copy(lerpHex(a.sc, b.sc, f, _c1)); sun.intensity = lerp(a.si, b.si, f);
   rim.intensity = lerp(a.rim, b.rim, f); rim.color.copy(sun.color).lerp(_c2.set(0xffd2a0), 0.4); rim.position.set(-sunDir.x, 0.25, -sunDir.z).normalize().multiplyScalar(100);
   hemi.color.copy(lerpHex(a.hs, b.hs, f, _c1)); hemi.groundColor.copy(lerpHex(a.hg, b.hg, f, _c1)); hemi.intensity = lerp(a.hi, b.hi, f);
-  scene.fog.color.copy(lerpHex(a.fog, b.fog, f, _c1)); scene.fog.density = lerp(a.fd, b.fd, f);
+  scene.fog.color.copy(lerpHex(a.fog, b.fog, f, _c1)); scene.fog.density = lerp(a.fd, b.fd, f) * 0.62 * (world.fogK || 1); scene.background.copy(scene.fog.color);
+  sky.material.uniforms.skyFog.value.copy(scene.fog.color); sky.material.uniforms.skyFogK.value = 1;
   renderer.toneMappingExposure = lerp(a.ex, b.ex, f);
   for (const s of [sky, envSky]) {
     const u = s.material.uniforms;
@@ -905,64 +907,268 @@ function initMaterials() {
 /* ============================================================
    5. Terrain & block
    ============================================================ */
-const BLOCK = { w: 2400, d: 1400, depth: 92 };
+const BLOCK = { w: 2400, d: 1400, depth: 92 }; // the hand-made airport neighbourhood (curated trees, tufts, orbit focus)
 const FIELD = { x0: -1150, x1: 1150, z0: -440, z1: 345 };
 const LAKE = { x: -660, z: 540, r: 150, level: -1.6 };
+const SEA = -1.6;                         // one water level for the sea, the river and the lakes
+const WORLD_R = 30000;                    // soft edge: hint from 26 km, wrap beyond 31 km
+const AF2 = { x: -5200, z: -5600, len: 900, wid: 30, h: 0 }; // grass strip in the hills under the mountains
+const VILLAGES = [{ x: -3900, z: 2300, n: 30 }, { x: 4300, z: 1700, n: 26 }, { x: -2700, z: -4300, n: 24 }, { x: 5400, z: -2700, n: 20 }, { x: 900, z: 3900, n: 28 }, { x: -6800, z: -2200, n: 18 }];
 function fieldDist(x, z) { const dx = Math.max(FIELD.x0 - x, 0, x - FIELD.x1), dz = Math.max(FIELD.z0 - z, 0, z - FIELD.z1); return Math.hypot(dx, dz); }
-function terrainH(x, z) {
-  const d = fieldDist(x, z);
-  if (d <= 0) return 0;
-  let h = (3 + 26 * Math.pow(fbm(x / 330 + 4.1, z / 330 + 1.3, 4), 1.6) + 6 * fbm(x / 90, z / 90, 2)) * smooth(0, 170, d);
-  const ld = Math.hypot(x - LAKE.x, (z - LAKE.z) * 1.35);
-  h = lerp(h, -5.5, smooth(LAKE.r, LAKE.r * 0.55, ld));
+// ---- world noise: integer hash → value noise → fbm. Mirrored exactly in GLSL (WORLD_GLSL) so the GPU terrain and
+// the CPU physics / object placement agree.
+function hash2(ix, iy) { let h = Math.imul(ix, 0x27d4eb2d) ^ Math.imul(iy, 0x165667b1); h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967295; }
+function vn(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1); return (a + (b - a) * u) + ((c + (d - c) * u) - (a + (b - a) * u)) * v; }
+function fbmN(x, y, o) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < o; i++) { s += a * vn(x * f + i * 17.31, y * f - i * 9.17); f *= 2; a *= 0.5; } return s; }
+const riverX = z => 2600 + 700 * Math.sin(z / 2300) + 300 * Math.sin(z / 900 + 1.3);
+const coastZ = x => 5200 + 1800 * (fbmN(x / 4000 + 2.2, 0.5, 3) - 0.5);
+function worldHraw(x, z, flatten = true) {
+  const d = fieldDist(x, z); if (d <= 0) return 0;
+  let h = (3 + 26 * Math.pow(fbmN(x / 330 + 4.1, z / 330 + 1.3, 4), 1.6) + 6 * fbmN(x / 90, z / 90, 2)) * smooth(0, 170, d);
+  h += 75 * fbmN(x / 2200 + 7.7, z / 2200 - 3.1, 4) * smooth(1500, 6000, Math.hypot(x, z));
+  const mz = smooth(-6500, -11500, z);
+  if (mz > 0) { const rg = 1 - Math.abs(2 * fbmN(x / 2600, z / 2600 + 9.3, 5) - 1); h += mz * (350 + 1800 * Math.pow(rg, 2.2)); }
+  if (flatten) { const qx = Math.max(Math.abs(x - AF2.x) - (AF2.len / 2 + 60), 0), qz = Math.max(Math.abs(z - AF2.z) - (AF2.wid / 2 + 40), 0); h = lerp(AF2.h, h, smooth(0, 140, Math.hypot(qx, qz))); }
+  const rv = (1 - smooth(18, 75, Math.abs(x - riverX(z)))) * smooth(-9000, -8000, z); h = lerp(h, -4, rv);
+  h = lerp(h, -5.5, smooth(LAKE.r, LAKE.r * 0.55, Math.hypot(x - LAKE.x, (z - LAKE.z) * 1.35)));
+  const zc = coastZ(x); h = lerp(h, -38, smooth(zc - 350, zc + 500, z));
+  const isl = smooth(0.6, 0.74, fbmN(x / 1500 + 31, z / 1500 + 17, 3)) * smooth(zc + 600, zc + 1600, z);
+  h = lerp(h, 18 + 30 * fbmN(x / 300, z / 300, 2), isl * 0.9);
   return h;
 }
-const groundH = (x, z) => (Math.abs(x) < BLOCK.w / 2 && Math.abs(z) < BLOCK.d / 2) ? terrainH(x, z) : -1e4;
-function buildTerrain() {
-  const g = new THREE.PlaneGeometry(BLOCK.w, BLOCK.d, 200, 200); g.rotateX(-PI / 2);
-  const p = g.attributes.position, col = new Float32Array(p.count * 3), c = new THREE.Color();
-  const base = new THREE.Color(0x8aa257), dry = new THREE.Color(0xb3ae6c), deep = new THREE.Color(0x637f42), shore = new THREE.Color(0xa4936a), field = new THREE.Color(0x92aa60);
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i), d = fieldDist(x, z); let h = terrainH(x, z);
-    if (d <= 0) h = -0.25; // sunk slightly: paved surfaces sit at y=0
-    p.setY(i, h);
-    const n = fbm(x / 120, z / 120, 3), n2 = vnoise(x / 18, z / 18);
-    c.copy(d <= 0 ? field : base).lerp(dry, clamp((n - .45) * 1.6, 0, 1) * .7).lerp(deep, clamp(-h * 0.0 + (fbm(x / 60 + 9, z / 60) - .5) * 1.2, 0, .6));
-    if (h > 8) c.lerp(dry, clamp((h - 8) / 25, 0, .5));
-    const ld = Math.hypot(x - LAKE.x, (z - LAKE.z) * 1.35); c.lerp(shore, smooth(LAKE.r * 1.15, LAKE.r * 0.85, ld) * 0.8);
-    c.multiplyScalar(0.94 + n2 * 0.1);
-    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+const terrainH = (x, z) => worldHraw(x, z);
+const forestMask = (x, z) => smooth(0.5, 0.6, fbmN(x / 900 + 5, z / 900 - 2, 3));
+const MAXH = 2500; // nothing in the world is higher; lets physics skip ground queries at altitude
+const isWater = (x, z) => terrainH(x, z) < SEA - 0.05;
+const WORLD_GLSL = /* glsl */`
+uniform vec4 uField; uniform vec4 uLake; uniform vec4 uAF2; uniform float uAF2h;
+float sstep(float a, float b, float x){ float t = clamp((x - a) / (b - a), 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+float hash2(int ix, int iy){ uint h = (uint(ix) * 0x27d4eb2du) ^ (uint(iy) * 0x165667b1u); h = (h ^ (h >> 15u)) * 0x85ebca6bu; h = (h ^ (h >> 13u)) * 0xc2b2ae35u; h ^= h >> 16u; return float(h) / 4294967295.0; }
+float vn(vec2 p){ vec2 i = floor(p), f = p - i, u = f * f * (3.0 - 2.0 * f); ivec2 ii = ivec2(i);
+  float a = hash2(ii.x, ii.y), b = hash2(ii.x + 1, ii.y), c = hash2(ii.x, ii.y + 1), d = hash2(ii.x + 1, ii.y + 1); return mix(mix(a, b, u.x), mix(c, d, u.x), u.y); }
+float fbmN(vec2 p, int o){ float s = 0.0, a = 0.5, f = 1.0; for (int i = 0; i < 6; i++){ if (i >= o) break; s += a * vn(vec2(p.x * f + float(i) * 17.31, p.y * f - float(i) * 9.17)); f *= 2.0; a *= 0.5; } return s; }
+float fieldDist(vec2 p){ return length(vec2(max(max(uField.x - p.x, 0.0), p.x - uField.y), max(max(uField.z - p.y, 0.0), p.y - uField.w))); }
+float riverX(float z){ return 2600.0 + 700.0 * sin(z / 2300.0) + 300.0 * sin(z / 900.0 + 1.3); }
+float coastZ(float x){ return 5200.0 + 1800.0 * (fbmN(vec2(x / 4000.0 + 2.2, 0.5), 3) - 0.5); }
+float worldH(vec2 p){
+  float d = fieldDist(p); if (d <= 0.0) return 0.0;
+  float x = p.x, z = p.y;
+  float h = (3.0 + 26.0 * pow(fbmN(vec2(x / 330.0 + 4.1, z / 330.0 + 1.3), 4), 1.6) + 6.0 * fbmN(vec2(x / 90.0, z / 90.0), 2)) * sstep(0.0, 170.0, d);
+  h += 75.0 * fbmN(vec2(x / 2200.0 + 7.7, z / 2200.0 - 3.1), 4) * sstep(1500.0, 6000.0, length(p));
+  float mz = sstep(-6500.0, -11500.0, z);
+  if (mz > 0.0) { float rg = 1.0 - abs(2.0 * fbmN(vec2(x / 2600.0, z / 2600.0 + 9.3), 5) - 1.0); h += mz * (350.0 + 1800.0 * pow(rg, 2.2)); }
+  vec2 q = max(abs(p - uAF2.xy) - uAF2.zw, 0.0); h = mix(uAF2h, h, sstep(0.0, 140.0, length(q)));
+  float rv = (1.0 - sstep(18.0, 75.0, abs(x - riverX(z)))) * sstep(-9000.0, -8000.0, z); h = mix(h, -4.0, rv);
+  h = mix(h, -5.5, sstep(uLake.z, uLake.z * 0.55, length(vec2(x - uLake.x, (z - uLake.y) * 1.35))));
+  float zc = coastZ(x); h = mix(h, -38.0, sstep(zc - 350.0, zc + 500.0, z));
+  float isl = sstep(0.6, 0.74, fbmN(vec2(x / 1500.0 + 31.0, z / 1500.0 + 17.0), 3)) * sstep(zc + 600.0, zc + 1600.0, z);
+  h = mix(h, 18.0 + 30.0 * fbmN(vec2(x / 300.0, z / 300.0), 2), isl * 0.9);
+  return h;
+}
+`;
+const WORLD_UNIFORMS = { uField: { value: new THREE.Vector4(FIELD.x0, FIELD.x1, FIELD.z0, FIELD.z1) }, uLake: { value: new THREE.Vector4(LAKE.x, LAKE.z, LAKE.r, LAKE.level) },
+  uAF2: { value: new THREE.Vector4(AF2.x, AF2.z, AF2.len / 2 + 60, AF2.wid / 2 + 40) }, uAF2h: { value: 0 } };
+
+// ---- clipmap terrain: 7 nested square grids around the camera, heights + normals + biome colours on the GPU
+const CLIP = { N: 96, s0: 8, levels: 7, meshes: [], water: null, center: new THREE.Vector3() };
+function buildClipmap() {
+  AF2.h = Math.max(worldHraw(AF2.x, AF2.z, false), 6); WORLD_UNIFORMS.uAF2h.value = AF2.h;
+  const N = CLIP.N, g = new THREE.PlaneGeometry(N, N, N, N); g.rotateX(-PI / 2); // unit cells, centred on 0
+  const detail = T.grassDetail(), common = { uTime: ENV.time, uDetail: { value: detail }, uCam: { value: new THREE.Vector3() } };
+  const C = (hex) => new THREE.Color(hex);
+  const pal = { grass: C(0x8aa257), dry: C(0xb3ae6c), deep: C(0x637f42), field: C(0x92aa60), forest: C(0x5b7a3c), sand: C(0xdcceA4), wet: C(0xa9986f), rock: C(0x8b857c), snow: C(0xf3f5f7), shore: C(0xa4936a),
+    cropA: C(0xcdb86a), cropB: C(0x957d50), cropC: C(0xa3ba68), cropD: C(0x6f8f45) };
+  for (let L = 0; L < CLIP.levels; L++) {
+    const U = { ...WORLD_UNIFORMS, ...common, uCell: { value: CLIP.s0 * 2 ** L }, uC: { value: new THREE.Vector2() }, uInner: { value: new THREE.Vector4(0, 0, -1, 0) } };
+    for (const k in pal) U['c_' + k] = { value: pal[k] };
+    const m = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0 });
+    m.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, U);
+      sh.vertexShader = 'uniform float uCell; uniform vec2 uC; varying vec3 vWP; varying float vH; varying vec3 vNw; varying vec4 vBio; varying float vCoast;\n' + WORLD_GLSL + sh.vertexShader
+        .replace('#include <beginnormal_vertex>', `
+          vec2 wxz = uC + position.xz * uCell; float hC = worldH(wxz); float e = max(uCell, 4.0);
+          float hx = worldH(wxz + vec2(e, 0.0)) - hC, hz = worldH(wxz + vec2(0.0, e)) - hC;
+          vec3 objectNormal = normalize(vec3(-hx, e, -hz)); vH = hC; vNw = objectNormal;
+          // low-frequency biome masks per vertex (cheap), detail stays per pixel
+          float bn1 = fbmN(wxz / 120.0, 3), bn2 = fbmN(wxz / 60.0 + vec2(9.0, 0.0), 2);
+          float bfarm = sstep(0.47, 0.55, fbmN(wxz / 1400.0 + vec2(-3.0, 11.0), 2)) * sstep(1400.0, 2200.0, length(wxz));
+          float bfor = sstep(0.5, 0.6, fbmN(wxz / 900.0 + vec2(5.0, -2.0), 3));
+          vBio = vec4(bn1, bn2, bfarm, bfor);
+          float zc = coastZ(wxz.x); vCoast = clamp(sstep(zc - 900.0, zc - 250.0, wxz.y) + sstep(18.0, 75.0, 75.0 - abs(wxz.x - riverX(wxz.y))) * 0.7, 0.0, 1.0);
+          if (fieldDist(wxz) <= 0.0) hC = -0.25; // paved surfaces sit on y = 0
+          if (max(abs(position.x), abs(position.z)) > ${(CLIP.N / 2 - 0.5).toFixed(1)}) hC -= uCell * 1.5; // skirt: hides cracks against the next coarser ring`)
+        .replace('#include <begin_vertex>', 'vec3 transformed = vec3(wxz.x, hC, wxz.y); vWP = transformed;');
+      sh.fragmentShader = `uniform vec4 uInner; uniform float uCell; uniform sampler2D uDetail; varying vec3 vWP; varying float vH; varying vec3 vNw; varying vec4 vBio; varying float vCoast;
+        uniform vec3 c_grass, c_dry, c_deep, c_field, c_forest, c_sand, c_wet, c_rock, c_snow, c_shore, c_cropA, c_cropB, c_cropC, c_cropD;\n` + WORLD_GLSL + sh.fragmentShader
+        .replace('#include <color_fragment>', `
+          if (uInner.z > 0.0 && abs(vWP.x - uInner.x) < uInner.z && abs(vWP.z - uInner.y) < uInner.z) discard; // a finer level covers this
+          vec2 p = vWP.xz; float h = vH; float up = normalize(vNw).y;
+          float n1 = vBio.x, n2 = vBio.y;
+          vec3 col = mix(c_grass, c_dry, clamp((n1 - 0.45) * 1.6, 0.0, 1.0) * 0.7);
+          col = mix(col, c_deep, clamp((n2 - 0.5) * 1.2, 0.0, 0.6));
+          if (fieldDist(p) <= 0.0) col = c_field;
+          // farmland parcels away from the airport
+          float farm = vBio.z * sstep(0.9, 0.97, up);
+          if (farm > 0.0) { vec2 cell = floor(p / vec2(170.0, 120.0)); float k = hash2(int(cell.x), int(cell.y));
+            vec3 crop = k < 0.25 ? c_cropA : k < 0.5 ? c_cropB : k < 0.75 ? c_cropC : c_cropD;
+            float rows = 0.92 + 0.08 * sin((k < 0.5 ? p.x : p.y) * 0.9); col = mix(col, crop * rows, farm * 0.6); }
+          float forest = vBio.w * sstep(2.0, 6.0, h) * (1.0 - sstep(1200.0, 1500.0, h)) * (1.0 - farm);
+          float canopy = vn(p / 9.0) * 0.6 + vn(p / 31.0) * 0.4; col = mix(col, c_forest * (0.75 + 0.5 * canopy), forest * 0.5);
+          if (h > 8.0) col = mix(col, c_dry, clamp((h - 8.0) / 25.0, 0.0, 0.5) * (1.0 - forest) * (1.0 - sstep(200.0, 600.0, h)));
+          col = mix(col, c_shore, sstep(uLake.z * 1.15, uLake.z * 0.85, length(vec2(p.x - uLake.x, (p.y - uLake.y) * 1.35))) * 0.8);
+          col = mix(col, c_sand, (1.0 - sstep(1.2, 4.0, h)) * vCoast);
+          col = mix(col, c_wet, 1.0 - sstep(-2.5, -1.0, h));
+          float rocky = sstep(0.82, 0.62, up) + sstep(500.0, 1100.0, h) * 0.55;
+          col = mix(col, c_rock * (0.85 + 0.3 * n1), clamp(rocky, 0.0, 1.0));
+          float snowLine = 1150.0 + 220.0 * (n1 - 0.5); col = mix(col, c_snow, sstep(snowLine, snowLine + 120.0, h) * sstep(0.5, 0.75, up));
+          float dd = length(vWP - cameraPosition); vec3 dt = texture2D(uDetail, p / 7.0).rgb * 2.0; col *= mix(vec3(1.0), dt, 1.0 - sstep(50.0, 900.0, dd));
+          diffuseColor.rgb = col;`)
+
+    };
+    m.customProgramCacheKey = () => 'clip';
+    const mesh = new THREE.Mesh(g, m); mesh.frustumCulled = false; mesh.receiveShadow = true; mesh.renderOrder = -1; mesh.matrixAutoUpdate = false; scene.add(mesh);
+    CLIP.meshes.push({ mesh, U });
   }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, MAT.grass); m.receiveShadow = true; m.matrixAutoUpdate = false; diorama.add(m);
-  // block sides follow the terrain edge; strata texture with the grass lip on top
-  const W2 = BLOCK.w / 2, D2 = BLOCK.d / 2, bottom = -BLOCK.depth;
-  const edges = [[[-W2, D2], [W2, D2]], [[W2, D2], [W2, -D2]], [[W2, -D2], [-W2, -D2]], [[-W2, -D2], [-W2, D2]]];
-  let per = 0;
-  for (const [a, b] of edges) {
-    const N = 160, pos = [], uv = [], idx = [], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    for (let i = 0; i <= N; i++) {
-      const t = i / N, x = lerp(a[0], b[0], t), z = lerp(a[1], b[1], t), top = Math.max(terrainH(x, z), fieldDist(x, z) > 0 ? -5 : -0.25);
-      pos.push(x, top, z, x, bottom, z); const u = (per + t * L) / 640;
-      uv.push(u, 1, u, 1 - (top - bottom) / 110);
+  // ---- water: one huge quad that follows the camera; waves, fresnel sky, sun glint, shallow colour and shore foam
+  const wq = new THREE.PlaneGeometry(1, 1); wq.rotateX(-PI / 2);
+  const wm = new THREE.ShaderMaterial({ fog: true, lights: false,
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uSunDir: { value: new THREE.Vector3() }, uSunCol: { value: new THREE.Color() }, uSky: { value: new THREE.Color() }, uHor: { value: new THREE.Color() },
+      uDeep: { value: new THREE.Color(0x1d4a58) }, uShallow: { value: new THREE.Color(0x4f9d97) }, uAmb: { value: 1 } }]),
+    vertexShader: `varying vec3 vWP;
+      #include <fog_pars_vertex>
+      void main(){ vec4 wp = modelMatrix * vec4(position, 1.0); vWP = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
+      #include <fog_vertex>
+      }`,
+    fragmentShader: (`uniform float uTime, uAmb; uniform vec3 uSunDir, uSunCol, uSky, uHor, uDeep, uShallow; varying vec3 vWP;
+      #include <common>
+      #include <fog_pars_fragment>
+      ` + WORLD_GLSL + `
+      void main(){
+        vec2 p = vWP.xz; float dist = length(cameraPosition - vWP);
+        float dep = dist < 3500.0 ? ${SEA.toFixed(2)} - worldH(p) : 40.0;
+        float t = uTime;
+        vec2 g = vec2(cos(p.x * 0.031 + t * 0.9) * 0.5 + cos(p.y * 0.047 - t * 1.3) * 0.35 + cos((p.x + p.y) * 0.071 + t * 1.7) * 0.2,
+                      sin(p.y * 0.029 + t * 0.8) * 0.5 + sin(p.x * 0.043 - t * 1.1) * 0.35 + sin((p.x - p.y) * 0.083 + t * 2.1) * 0.2);
+        g = g * 0.6 + (vec2(vn(p * 0.21 + t * 0.4) + vn(p * 0.83 - t * 0.7) * 0.5, vn(p.yx * 0.19 - t * 0.35) + vn(p.yx * 0.77 + t * 0.6) * 0.5) - 0.75) * 0.9;
+        float k = 0.05 * (1.0 - smoothstep(200.0, 4000.0, dist)) + 0.006;
+        vec3 n = normalize(vec3(-g.x * k * 2.6, 1.0, -g.y * k * 2.6));
+        vec3 V = normalize(cameraPosition - vWP); float fres = 0.04 + 0.96 * pow(1.0 - max(dot(n, V), 0.0), 5.0);
+        vec3 water = mix(uShallow, uDeep, smoothstep(0.0, 14.0, dep)) * uAmb;
+        vec3 R = reflect(-V, n); vec3 sky = mix(uHor, uSky, smoothstep(0.0, 0.5, R.y));
+        vec3 col = mix(water, sky, fres * 0.7);
+        col += uSunCol * pow(max(dot(R, uSunDir), 0.0), 260.0) * 4.0 + uSunCol * pow(max(dot(R, uSunDir), 0.0), 18.0) * 0.12;
+        float foam = step(0.0, dep) * (1.0 - smoothstep(0.0, 1.6, dep)) * (0.55 + 0.45 * sin(t * 1.6 + vn(p * 0.08) * 12.0 - dep * 3.0));
+        col = mix(col, vec3(0.95) * (0.4 + 0.6 * uAmb), clamp(foam, 0.0, 1.0) * 0.85);
+        gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }`) });
+  Object.assign(wm.uniforms, WORLD_UNIFORMS);
+  CLIP.water = new THREE.Mesh(wq, wm); CLIP.water.scale.set(64000, 1, 64000); CLIP.water.position.y = SEA; CLIP.water.frustumCulled = false; CLIP.water.renderOrder = 1; scene.add(CLIP.water);
+}
+function updateClipmap() {
+  const cx = camera.position.x, cz = camera.position.z; let prev = null;
+  for (let L = 0; L < CLIP.levels; L++) {
+    const { U } = CLIP.meshes[L], s = U.uCell.value, step = 2 * s;
+    const ux = Math.floor(cx / step) * step, uz = Math.floor(cz / step) * step; U.uC.value.set(ux, uz); U.uCam.value.copy(camera.position);
+    if (prev) U.uInner.value.set(prev.x, prev.y, CLIP.N * prev.s / 2 - prev.s * 1.0, 0); else U.uInner.value.set(0, 0, -1, 0); // coarse covers the finer ring's skirt cell
+    prev = { x: ux, y: uz, s };
+  }
+  const W = CLIP.water, u = W.material.uniforms; W.position.x = Math.round(cx / 64) * 64; W.position.z = Math.round(cz / 64) * 64;
+  u.uTime.value = world.time; u.uSunDir.value.copy(sunDir); u.uSunCol.value.copy(sun.color).multiplyScalar(sun.intensity * 0.35 * (sunDir.y > 0 ? 1 : 0));
+  u.uHor.value.copy(scene.fog.color); u.uSky.value.copy(hemi.color).multiplyScalar(0.9); u.uAmb.value = lerp(1, 0.25, world.night);
+  sky.position.copy(camera.position); // the sky box must surround the camera wherever it flies
+}
+
+// ---- streamed instances beyond the curated airport block: trees and rocks in 300 m cells around the camera
+const STREAM = { cell: 300, R: 5, cache: new Map(), cx: 1e9, cz: 1e9, meshes: null, cap: [4500, 3400, 1500] };
+function inBlock(x, z) { return Math.abs(x) < BLOCK.w / 2 + 20 && Math.abs(z) < BLOCK.d / 2 + 20; }
+function nearVillage(x, z, r = 150) { for (const v of VILLAGES) if (Math.hypot(x - v.x, z - v.z) < r) return true; return false; }
+function streamCell(gx, gz) {
+  const key = gx + ',' + gz; if (STREAM.cache.has(key)) return STREAM.cache.get(key);
+  const out = [[], [], []], r = mulberry((gx * 73856093) ^ (gz * 19349663) ^ 0x5bd1e995), S = STREAM.cell;
+  const f0 = forestMask((gx + 0.5) * S, (gz + 0.5) * S), tries = 10 + Math.round(f0 * 50);
+  for (let i = 0; i < tries; i++) {
+    const x = (gx + r()) * S, z = (gz + r()) * S, rot = r() * TAU, sc = r(), pick = r();
+    if (inBlock(x, z) || nearVillage(x, z) || (Math.abs(x - AF2.x) < AF2.len / 2 + 80 && Math.abs(z - AF2.z) < 70)) continue;
+    const h = terrainH(x, z); if (h < 2.5 || h > 1500) continue;
+    const sl = Math.abs(terrainH(x + 6, z) - h) + Math.abs(terrainH(x, z + 6) - h); if (sl > 7) { if (h > 300 && pick < 0.5) out[2].push(x, h, z, rot, 1.5 + sc * 3.5); continue; }
+    const fm = forestMask(x, z);
+    if (fm < 0.2 && pick > 0.08) { if (h > 600 && pick < 0.3) out[2].push(x, h, z, rot, 1 + sc * 2.5); continue; }
+    const conifer = h > 220 || fbmN(x / 700 + 3, z / 700, 2) > 0.55;
+    out[conifer ? 1 : 0].push(x, h - 0.3, z, rot, 0.9 + sc * 0.9);
+  }
+  STREAM.cache.set(key, out); if (STREAM.cache.size > 900) STREAM.cache.delete(STREAM.cache.keys().next().value);
+  return out;
+}
+function buildStreaming() {
+  // low-poly variants (trunk merged into the crown, vertex coloured) so thousands stay cheap; no shadow casting
+  const lumpy = (geo, k, seed) => { const p = geo.attributes.position; for (let i = 0; i < p.count; i++) { _v1.fromBufferAttribute(p, i); const n = 1 + (vn(_v1.x * 2.1 + seed, _v1.y * 2.3 + _v1.z * 1.7) - .5) * k; p.setXYZ(i, _v1.x * n, _v1.y * n, _v1.z * n); } geo.deleteAttribute('normal'); geo.deleteAttribute('uv'); const m = mergeVertices(geo); m.computeVertexNormals(); return m; };
+  const vc = (g, f) => { g = normGeo(g, true); const p = g.attributes.position, c = g.attributes.color; for (let i = 0; i < p.count; i++) { const [r, gg, b] = f(p.getY(i)); c.setXYZ(i, r, gg, b); } return g; };
+  const leafy = vc(mergeGeometries([normGeo(lumpy(new THREE.IcosahedronGeometry(2.3, 0), 0.4, 3).scale(1, 0.85, 1).translate(0, 5.2, 0)), normGeo(lumpy(new THREE.IcosahedronGeometry(1.7, 0), 0.4, 8).translate(0.9, 6.3, 0.5)), normGeo(new THREE.CylinderGeometry(0.25, 0.35, 3.4, 5, 1, true).translate(0, 1.7, 0))]), y => y < 3 ? [0.32, 0.22, 0.14] : [0.55 + (y - 3) * 0.06, 0.62 + (y - 3) * 0.06, 0.5]); // ~50 tris per tree
+  const pine = vc(mergeGeometries([normGeo(new THREE.ConeGeometry(2.0, 4.6, 7, 1).translate(0, 4.0, 0)), normGeo(new THREE.ConeGeometry(1.45, 3.6, 7, 1).translate(0, 6.6, 0)), normGeo(new THREE.CylinderGeometry(0.2, 0.3, 2.2, 5).translate(0, 1.1, 0))]), y => y < 1.8 ? [0.3, 0.2, 0.13] : [0.45 + y * 0.03, 0.55 + y * 0.03, 0.45]);
+  const rock = vc(lumpy(new THREE.IcosahedronGeometry(1, 0), 0.6, 7).scale(1.2, 0.7, 1).translate(0, 0.3, 0), y => [0.62 + y * 0.1, 0.6 + y * 0.1, 0.57 + y * 0.1]);
+  const mats = [std({ vertexColors: true, roughness: 0.95 }), std({ vertexColors: true, roughness: 0.95 }), std({ vertexColors: true, roughness: 0.9 })];
+  STREAM.meshes = [leafy, pine, rock].map((g, i) => { const m = new THREE.InstancedMesh(g, mats[i], STREAM.cap[i]); m.count = 0; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); return m; });
+  STREAM.tint = [new THREE.Color(0x6f9a45), new THREE.Color(0x4f7a3c), new THREE.Color(0x9a958c)];
+}
+function updateStreaming(force = false) {
+  const S = STREAM.cell, gx = Math.floor(camera.position.x / S), gz = Math.floor(camera.position.z / S);
+  if (!force && gx === STREAM.cx && gz === STREAM.cz) return; STREAM.cx = gx; STREAM.cz = gz;
+  const n = [0, 0, 0], R = camera.position.y - groundAt(camera.position.x, camera.position.z) > 1500 ? 3 : STREAM.R;
+  for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) {
+    const cell = streamCell(gx + i, gz + j);
+    for (let k = 0; k < 3; k++) { const a = cell[k], M = STREAM.meshes[k];
+      for (let q = 0; q < a.length && n[k] < STREAM.cap[k]; q += 5) {
+        _dummy.position.set(a[q], a[q + 1], a[q + 2]); _dummy.rotation.set(0, a[q + 3], 0); _dummy.scale.setScalar(a[q + 4]); _dummy.updateMatrix(); M.setMatrixAt(n[k], _dummy.matrix);
+        M.setColorAt(n[k], _c1.copy(STREAM.tint[k]).offsetHSL(0, 0, (hash2(n[k], k) - 0.5) * 0.08)); n[k]++; } }
+  }
+  STREAM.meshes.forEach((M, k) => { M.count = n[k]; M.instanceMatrix.needsUpdate = true; if (M.instanceColor) M.instanceColor.needsUpdate = true; });
+}
+// ---- villages: little clusters of houses along a couple of lanes, connected to the airport by country roads
+function buildVillages() {
+  const parts = [], wall = new THREE.Color(), roof = new THREE.Color(), r = mulberry(404);
+  const house = (x, z, rot, w, d, hh, wc, rc) => {
+    const body = colorGeo(new THREE.BoxGeometry(w, hh, d).translate(0, hh / 2, 0), wc);
+    const rs = new THREE.Shape(); rs.moveTo(-w / 2 - 0.4, 0); rs.lineTo(0, w * 0.42); rs.lineTo(w / 2 + 0.4, 0); rs.closePath();
+    const rg = colorGeo(new THREE.ExtrudeGeometry(rs, { depth: d + 0.8, bevelEnabled: false }).translate(0, hh, -d / 2 - 0.4), rc);
+    const g = mergeGeometries([normGeo(body, true), normGeo(rg, true)]); g.rotateY(rot); g.translate(x, terrainH(x, z) - 0.2, z); parts.push(g);
+  };
+  const roofs = [0xa4563d, 0x8a4a3a, 0x5d5f63, 0x7a3f33, 0x9b6a45], walls = [0xf1ece1, 0xe6dccb, 0xdcd3c3, 0xf4efe6, 0xcfc3ae];
+  for (const v of VILLAGES) {
+    if (terrainH(v.x, v.z) < 2) continue;
+    const ang = r() * PI;
+    for (let i = 0; i < v.n; i++) {
+      const lane = r() < 0.5 ? 0 : PI / 2, t = (r() - 0.5) * 260, side = (r() < 0.5 ? -1 : 1) * (14 + r() * 10);
+      const a = ang + lane, x = v.x + Math.cos(a) * t - Math.sin(a) * side, z = v.z + Math.sin(a) * t + Math.cos(a) * side, h = terrainH(x, z);
+      if (h < 2 || Math.abs(terrainH(x + 8, z) - h) > 3) continue;
+      house(x, z, -a + (side > 0 ? 0 : PI), 7 + r() * 5, 8 + r() * 5, 4.5 + r() * 2.5, walls[(r() * walls.length) | 0], roofs[(r() * roofs.length) | 0]);
     }
-    for (let i = 0; i < N; i++) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
-    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); sg.setIndex(idx); sg.computeVertexNormals();
-    // outward normal check
-    const mid = new THREE.Vector3((a[0] + b[0]) / 2, 0, (a[1] + b[1]) / 2); if (sg.attributes.normal.getX(0) * mid.x + sg.attributes.normal.getZ(0) * mid.z < 0) { for (let i = 0; i < idx.length; i += 3) { const t = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = t; } sg.setIndex(idx); sg.computeVertexNormals(); }
-    addStatic(sg, MAT.strata, true, true); per += L;
+    // church / tall barn as a landmark
+    house(v.x + 20, v.z + 20, ang, 9, 18, 9, 0xeee8dc, 0x6b4636);
+    // lanes through the village + a country road to the airport perimeter road
+    for (const lane of [0, PI / 2]) { const a = ang + lane, pts = []; for (let t = -170; t <= 170; t += 17) { const x = v.x + Math.cos(a) * t, z = v.z + Math.sin(a) * t; pts.push([x, z]); } addRoad(pts, 6); }
+    const ex = clamp(v.x, -1120, 1120), ez = clamp(v.z, -425, 330), pts = [], L = Math.hypot(v.x - ex, v.z - ez), n = Math.max(2, Math.ceil(L / 30));
+    for (let i = 0; i <= n; i++) { const t = i / n, w = Math.sin(t * PI) * 180 * (fbmN(v.x / 500, v.z / 500, 1) - 0.5); pts.push([lerp(ex, v.x, t) + w * (v.z - ez) / L, lerp(ez, v.z, t) - w * (v.x - ex) / L]); }
+    addRoad(pts, 7);
   }
-  addStatic(xf(new THREE.PlaneGeometry(BLOCK.w, BLOCK.d), 0, bottom, 0, 0, PI / 2), MAT.under);
-  // lake surface
-  const lg = new THREE.CircleGeometry(1, 48); lg.rotateX(-PI / 2); lg.scale(LAKE.r * 0.92, 1, LAKE.r * 0.92 / 1.35); lg.translate(LAKE.x, LAKE.level, LAKE.z);
-  const lake = new THREE.Mesh(lg, MAT.water); lake.receiveShadow = true; diorama.add(lake);
-  // paper table with a soft shadow catcher
-  const paper = new THREE.Mesh(xf(new THREE.PlaneGeometry(60000, 60000), 0, -170, 0, 0, -PI / 2), MAT.paper); scene.add(paper);
-  const sh = new THREE.Mesh(xf(new THREE.PlaneGeometry(9000, 9000), 0, -169.8, 0, 0, -PI / 2), MAT.shadow); sh.receiveShadow = true; scene.add(sh);
+  if (!parts.length) return;
+  const m = new THREE.Mesh(mergeGeometries(parts), std({ vertexColors: true, roughness: 0.85 })); m.castShadow = true; m.receiveShadow = true; m.matrixAutoUpdate = false; scene.add(m);
+}
+function addRoad(pts2, w) { // ribbon draped on the terrain (bridged over water)
+  const g = ribbon(pts2, w, 0, 30), p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); p.setY(i, Math.max(terrainH(x, z), SEA + 2.4) + 0.45); }
+  g.computeVertexNormals(); addStatic(g, MAT.countryRoad || (MAT.countryRoad = withDistanceFade(overlay(new THREE.MeshLambertMaterial({ color: 0x8e8a82, transparent: true, depthWrite: false }), -4), 900, 2600)));
+}
+function buildTerrain() {
+  buildClipmap();
   // mown stripes along the runway strip
   const mg = new THREE.PlaneGeometry(2160, 300); mg.rotateX(-PI / 2); mg.translate(0, -0.2, RW.z);
   const uv = mg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2160 / 32, uv.getY(i) * 300 / 32); // 8 m stripes
   addStatic(mg, MAT.mown, false, true);
+  buildVillages(); buildStreaming();
 }
 
 /* ============================================================
@@ -1445,14 +1651,14 @@ function buildLife() {
     uniforms: { map: { value: puffTex }, uTime: ENV.time, sun: { value: new THREE.Color() }, shade: { value: new THREE.Color() }, opacity: { value: 1 }, drift: { value: 0 } },
     vertexShader: `uniform float drift; varying vec2 vUv; varying float vH; varying float vFade;
       void main(){ vUv = uv; vec3 c = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz; float s = length(instanceMatrix[0].xyz);
-        c.x = mod(c.x + drift + 9000.0, 18000.0) - 9000.0;
+        c.x += drift; c.xz = cameraPosition.xz + mod(c.xz - cameraPosition.xz + 12000.0, 24000.0) - 12000.0; // tiles around the camera: endless sky
         vec4 mv = viewMatrix * modelMatrix * vec4(c, 1.0); mv.xy += position.xy * s; vH = position.y + 0.5;
         float d = length(mv.xyz); vFade = smoothstep(60.0, 260.0, d) * (1.0 - smoothstep(11000.0, 16000.0, d));
         gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `uniform sampler2D map; uniform vec3 sun; uniform vec3 shade; uniform float opacity; varying vec2 vUv; varying float vH; varying float vFade;
       void main(){ vec4 t = texture2D(map, vUv); float a = t.a * opacity * vFade; if (a < 0.004) discard; gl_FragColor = vec4(mix(shade, sun, smoothstep(0.1, 0.95, vH)), a); }` });
   const cg = new THREE.PlaneGeometry(1, 1), list = [], rc = mulberry(71);
-  for (let k = 0; k < 34; k++) { const ang = rc() * TAU, dist = 1600 + rc() * 7000, cx = Math.cos(ang) * dist, cz = Math.sin(ang) * dist, cy = 750 + rc() * 500, n = 6 + (rc() * 7 | 0), big = 120 + rc() * 160;
+  for (let k = 0; k < 70; k++) { const hi = k % 3 === 0, cx = (rc() - 0.5) * 24000, cz = (rc() - 0.5) * 24000, cy = hi ? 2300 + rc() * 600 : 800 + rc() * 600, n = 6 + (rc() * 7 | 0), big = (hi ? 220 : 120) + rc() * 160; if (!hi && Math.hypot(cx, cz) < 1500) continue; // two layers you can fly through
     for (let i = 0; i < n; i++) list.push([cx + (rc() - .5) * big * 2.4, cy + (rc() - .3) * big * 0.35, cz + (rc() - .5) * big * 1.2, big * (0.55 + rc() * 0.6)]); }
   INST.clouds = new THREE.InstancedMesh(cg, cloudMat, list.length); INST.clouds.frustumCulled = false; INST.clouds.renderOrder = -1;
   list.forEach((c, i) => { _dummy.position.set(c[0], c[1], c[2]); _dummy.rotation.set(0, 0, 0); _dummy.scale.setScalar(c[3]); _dummy.updateMatrix(); INST.clouds.setMatrixAt(i, _dummy.matrix); });
@@ -1462,7 +1668,7 @@ function buildLife() {
   const hazeMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.BackSide, fog: false, uniforms: { color: { value: new THREE.Color() }, opacity: { value: 0.6 } },
     vertexShader: 'varying float vY; void main(){ vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: 'uniform vec3 color; uniform float opacity; varying float vY; void main(){ float a = (1.0 - smoothstep(0.0, 0.62, vY)) * smoothstep(0.0, 0.08, vY) * opacity; gl_FragColor = vec4(color, a); }' });
-  ENV.haze = new THREE.Mesh(hz, hazeMat); ENV.haze.renderOrder = -2; scene.add(ENV.haze);
+  ENV.haze = new THREE.Mesh(hz, hazeMat); ENV.haze.renderOrder = -2; ENV.haze.visible = false; // the sky now fades into the fog itself
   // --- approach "rabbit": sequenced flashers down the approach centreline (both ends), as halo points
   const rp = [], rs = []; for (const sgn of [-1, 1]) for (let d = 270; d >= 30; d -= 30) { rp.push(sgn * (RW.len / 2 + d), 2.2 + d * 0.01, RW.z); rs.push(9); }
   const rgeo = new THREE.BufferGeometry(); rgeo.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); rgeo.setAttribute('size', new THREE.Float32BufferAttribute(rs, 1)); rgeo.setAttribute('hcol', new THREE.BufferAttribute(new Float32Array(rp.length), 3).setUsage(THREE.DynamicDrawUsage));
@@ -1501,7 +1707,7 @@ function updateLife(dt, t) {
   // clouds: drift with the wind, lit by the sun colour, thinner from the orbit view
   const cu = INST.clouds.material.uniforms; cu.drift.value = t * 4.5; cu.sun.value.copy(sun.color).multiplyScalar(0.55 + 0.45 * (1 - world.night)).lerp(_c1.set(0xffffff), 0.35 * (1 - world.night));
   cu.shade.value.copy(hemi.color).multiplyScalar(0.65 + 0.25 * (1 - world.night)); cu.opacity.value = lerp(cam.mode === 'orbit' ? 0.55 : 0.9, 0.35, world.night);
-  ENV.haze.material.uniforms.color.value.copy(scene.fog.color); ENV.haze.material.uniforms.opacity.value = lerp(0.55, 0.85, world.night);
+
   // night: rabbit flashes from far to near, twice a second; floodlight pools
   const L = world.lights, A = ENV.rabbit.geometry.attributes.hcol, n = A.count / 2, ph = (t * 2) % 1;
   for (let e = 0; e < 2; e++) for (let i = 0; i < n; i++) { const on = L > 0.05 && Math.abs(ph - i / n) < 0.06 ? 1.4 : 0; A.array[(e * n + i) * 3] = on; A.array[(e * n + i) * 3 + 1] = on; A.array[(e * n + i) * 3 + 2] = on; }
@@ -2344,7 +2550,7 @@ function CLof(a, flap) {
 const _F = new THREE.Vector3(), _Tq = new THREE.Vector3(), _fw = new THREE.Vector3(), _upv = new THREE.Vector3(), _rt = new THREE.Vector3(), _vh = new THREE.Vector3(),
   _ld = new THREE.Vector3(), _r = new THREE.Vector3(), _p = new THREE.Vector3(), _vp = new THREE.Vector3(), _ww = new THREE.Vector3(), _tmp = new THREE.Vector3(),
   _wd = new THREE.Vector3(), _wl = new THREE.Vector3(), _dq = new THREE.Quaternion(), _qi = new THREE.Quaternion(), _tb = new THREE.Vector3(), _ub = new THREE.Vector3(), _fc = new THREE.Vector3();
-const groundAt = (x, z) => world.flatGround ? 0 : (Math.abs(x) < BLOCK.w / 2 && Math.abs(z) < BLOCK.d / 2) ? terrainH(x, z) : -170;
+const groundAt = (x, z) => world.flatGround ? 0 : Math.max(terrainH(x, z), SEA); // the sea surface counts as ground (contact there = splashdown)
 
 Object.assign(Aircraft.prototype, {
   initState() {
@@ -2434,7 +2640,7 @@ Object.assign(Aircraft.prototype, {
     _ww.copy(this.w).applyQuaternion(this.q); // body rates → world
     for (let i = 0; i < 3; i++) {
       _r.copy(this.contacts[i]).applyQuaternion(this.q); _p.copy(this.pos).add(_r);
-      const gh = groundAt(_p.x, _p.z), pen = gh - _p.y;
+      const gh = this.pos.y > MAXH ? -1e9 : groundAt(_p.x, _p.z), pen = gh - _p.y;
       if (pen <= 0 || !gearLocked) { this.comp[i] += (0 - this.comp[i]) * 0.2; continue; }
       contacts++;
       _vp.crossVectors(_ww, _r).add(this.vel);
@@ -2453,6 +2659,7 @@ Object.assign(Aircraft.prototype, {
     }
     const wasGround = this.onGround;
     this.onGround = contacts > 0;
+    if (contacts && !world.flatGround && !this.crashing && terrainH(this.pos.x, this.pos.z) < SEA - 0.05) { this.crash('Splashdown — that was water'); }
     // hard contacts: fuselage / wingtips / gear-up belly
     if (!this.crashing) this.checkStrikes();
     // integrate linear motion
@@ -2498,7 +2705,7 @@ Object.assign(Aircraft.prototype, {
     this.onGroundLong = this.groundT > 2;
     // derived
     this.v = this.vel.length(); this.vs = this.vel.y; this.ias = this.v * Math.sqrt(sig);
-    this.agl = this.pos.y - Math.max(groundAt(this.pos.x, this.pos.z), -170);
+    this.agl = this.pos.y - (this.pos.y > MAXH + 3000 ? 0 : groundAt(this.pos.x, this.pos.z));
     this.wheelV = this.onGround ? this.vel.dot(_fw) : this.wheelV * (1 - dt * 0.3);
     if (this.pos.y < -165 && !this.crashing) this.crash('Off the edge of the world');
     if (!(this.pos.x === this.pos.x) || !(this.q.w === this.q.w)) this.crash('Numerical upset');
@@ -2508,6 +2715,7 @@ Object.assign(Aircraft.prototype, {
     if (r.active) { const vf = this.vel.dot(_fw); if (vf >= d.Vr) { r.active = false; r.done = true; r.measured = Math.hypot(this.pos.x - r.start.x, this.pos.z - r.start.z); if (this.onRunMeasured) this.onRunMeasured(r); } else if (!this.onGround || this.throttle < 0.3) r.active = false; }
   },
   checkStrikes() {
+    if (this.pos.y > MAXH + 60 && !world.flatGround) return;
     // wingtips, tail cone and (gear up) belly
     const F = this.M.fus, pts = this._strike || (this._strike = [
       new THREE.Vector3(this.M.lights.tip[0], this.M.lights.tip[1], this.M.lights.tip[2]), new THREE.Vector3(this.M.lights.tip[0], this.M.lights.tip[1], -this.M.lights.tip[2]),
@@ -3100,7 +3308,7 @@ function setCamMode(mode, opt = {}) {
     inspectGoal(opt.view || '34', cam.inspectAc);
     controls.minDistance = 0.8 * cam.inspectAc.length; controls.maxDistance = 4 * cam.inspectAc.length;
   } else if (mode === 'orbit') {
-    controls.minDistance = 80; controls.maxDistance = 3000;
+    controls.minDistance = 80; controls.maxDistance = 6000;
     if (opt.reset) { cam.orbitPos.set(1180, 860, 1460); cam.orbitTarget.set(-40, 0, -60); }
     if (opt.focus) { cam.orbitTarget.copy(opt.focus); cam.orbitPos.copy(opt.focus).add(opt.offset || _v1.set(160, 110, 190)); }
     cam.goalPos.copy(cam.orbitPos); cam.goalLook.copy(cam.orbitTarget);
@@ -3139,7 +3347,7 @@ function updateCamera(dt) {
     camera.quaternion.slerpQuaternions(T.q0, _cq, e); camera.fov = lerp(T.f0, fov, e);
     if (T.t >= 1) { cam.trans = null; if (cam.mode === 'orbit' || cam.mode === 'inspect') { controls.target.copy(_cl); controls.enabled = true; controls.update(); } }
   } else if (cam.mode === 'orbit' || cam.mode === 'inspect') {
-    if (cam.mode === 'orbit') { controls.target.x = clamp(controls.target.x, -BLOCK.w / 2, BLOCK.w / 2); controls.target.z = clamp(controls.target.z, -BLOCK.d / 2, BLOCK.d / 2); controls.target.y = clamp(controls.target.y, -20, 200); }
+    if (cam.mode === 'orbit') { controls.target.x = clamp(controls.target.x, -WORLD_R, WORLD_R); controls.target.z = clamp(controls.target.z, -WORLD_R, WORLD_R); controls.target.y = clamp(controls.target.y, -20, 2500); }
     controls.update(); camera.fov = lerp(camera.fov, 32, 0.1);
   } else {
     camera.position.copy(_cp);
@@ -3291,6 +3499,11 @@ function simStep(dt) {
       else if (p.taxi) { p.input.pitch = p.input.roll = p.input.yaw = 0; if (p.taxi.update(dt)) p.taxi = null; }
       if (!p.taxi && !game.autoland) manualInputs(dt); // assists own the controls while active (keys cancel them)
       p.physicsStep(dt);
+      // soft world edge: past 31 km fade out and re-enter from the opposite side, heading home
+      if (!p.onGround && !game.wrapping && Math.hypot(p.pos.x, p.pos.z) > WORLD_R + 1000) {
+        game.wrapping = true; $('fade').style.opacity = 1;
+        setTimeout(() => { p.pos.x *= -0.93; p.pos.z *= -0.93; p.pos.y = Math.max(p.pos.y, groundAt(p.pos.x, p.pos.z) + 450); p.syncRoot(); $('fade').style.opacity = 0; game.wrapping = false; toast('You flew off the map — wrapped around to the other side'); }, 650);
+      }
     }
     p.syncRoot();
   }
@@ -3643,6 +3856,7 @@ function computeHint() {
     guide.stallLatch = p.stall > 0.3 || (guide.stallLatch && p.stall > 0.08);
     if (guide.stallLatch && !p.maneuver) return { id: 'stall', html: `⚠ Stall! Push nose down ${K('↑')} and add throttle ${K('W')}`, tone: 'warn' };
     if (!game.autoland && !p.maneuver && p.agl > 25 && p.ias < 1.08 * d.Vr && p.vs < 1) return { id: 'lowspeed', html: `⚠ Low on speed — push nose down ${K('↑')} and add throttle ${K('W')}`, tone: 'warn' };
+    const rr0 = Math.hypot(p.pos.x, p.pos.z); if (rr0 > WORLD_R - 4000 && !p.maneuver) return { id: 'edge', html: `⚠ Edge of the map — turn back · the airport is ${(rr0 / 1000).toFixed(0)} km away`, tone: 'warn' };
     if (p.maneuver) return { id: 'man', html: `<b>${p.maneuver.def.name}</b> in progress · hands off, or press an arrow key to take over`, prog: p.maneuver.progress ? p.maneuver.progress() : null };
     const ph = phaseOf(p);
     if (game.autoland) return game.autoland.phase === 'flare' || ph === 'FLARE' ? { id: 'flare', html: `Auto-land flaring · throttle idle ${K('S')} · nose up slightly ${K('↓')}` } : { id: 'autoland', html: `<b>Auto-land</b> is flying the 3° glide slope to runway 09 · arrows take over` };
@@ -3835,7 +4049,7 @@ function updateVisuals(dt) {
   updateDetails(dt, world.time); updateHangars(dt); updateJetBridges(dt); updateLife(dt, world.time);
   if (p) { const far = p.pos.distanceTo(camera.position) > 1500 && cam.mode === 'orbit'; if (!p.lod) p.makeLOD(); p.detail.visible = !far; p.lod.visible = far; p.animate(dt, world.time); updateContactShadow(p); }
   for (const a of ai.list) { const far = a.ac.pos.distanceTo(camera.position) > (cam.inspectAc === a.ac && cam.mode === 'inspect' ? 1e9 : 320); a.ac.detail.visible = !far; a.ac.lod.visible = far; if (!far && ai.enabled) a.ac.animate(dt, world.time); updateContactShadow(a.ac); }
-  updatePAPI(); updateFX(dt, p && !(game.tow && !game.tow.done) ? p : null); updateCamera(dt); updateShadowCam(); ACMAT.halo.uniforms.scale.value = canvas.height / (2 * Math.tan(camera.fov * D2R / 2)); ACMAT.halo.uniforms.gain.value = lerp(0.6, 1.3, world.night); updateHUD(); updateGuide(dt); updateLandingLight(); updateAudio();
+  updatePAPI(); updateFX(dt, p && !(game.tow && !game.tow.done) ? p : null); updateCamera(dt); updateClipmap(); updateStreaming(); updateShadowCam(); ACMAT.halo.uniforms.scale.value = canvas.height / (2 * Math.tan(camera.fov * D2R / 2)); ACMAT.halo.uniforms.gain.value = lerp(0.6, 1.3, world.night); updateHUD(); updateGuide(dt); updateLandingLight(); updateAudio();
   if (++hoverFrame % 3 === 0) doHover();
   uiT += dt; if (uiT > 0.25) { uiT = 0; refreshUI(); }
 }
@@ -3909,7 +4123,7 @@ const __test = {
     const ALLOWED = { // flight phase (HUD) → acceptable hint ids
       'ROLL-OUT': ['tow'], PUSHBACK: ['push'], PARKED: ['engine', 'ready', 'to-stand'], 'ENGINE START': ['spool', 'engine'],
       TAXI: ['auto-taxi', 'taxi', 'taxi-fast', 'taxi-stand', 'hold-traffic', 'hold-clear', 'ready', 'to-stand', 'rollout'], 'LINE-UP': ['lineup', 'auto-taxi'], 'TAKEOFF ROLL': ['roll', 'lineup'], ROTATE: ['rotate', 'roll'],
-      CLIMB: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland'], CRUISE: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland'],
+      CLIMB: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland', 'edge'], CRUISE: ['posclimb', 'climb300', 'cruise', 'back', 'lowspeed', 'stall', 'autoland', 'edge'],
       APPROACH: ['autoland', 'approach', 'flare'], FLARE: ['flare', 'autoland'], ROLLOUT: ['rollout', 'autoland', 'to-stand', 'taxi-stand'], RESET: ['reset'],
     };
     const wasAI = ai.enabled; ai.enabled = false; ai.list.forEach(a => a.ac.root.visible = false); // a quiet runway: this test is about the guide
@@ -3992,7 +4206,7 @@ const __test = {
 window.__test = __test; window.__game = game;
 // deterministic stepping for screenshots / verification in slow (software) renderers
 window.__advance = (sec, frames = 4) => { running = false; const per = sec / frames; for (let f = 0; f < frames; f++) { for (let t = 0; t < per; t += DT) simStep(DT); updateVisuals(per); } composer.render(); };
-window.__api = { scene, renderer, ENV, INST, FX, rollOut, setCamMode, autoTaxi, toggleAutoland, startManeuver, applyTimeOfDay, resetPlaneToThreshold, cam, controls, camera, ai };
+window.__api = { scene, renderer, ENV, INST, FX, CLIP, STREAM, rollOut, setCamMode, autoTaxi, toggleAutoland, startManeuver, applyTimeOfDay, resetPlaneToThreshold, cam, controls, camera, ai };
 window.__resume = () => { if (!running) { running = true; lastT = performance.now(); requestAnimationFrame(frame); } };
 window.__prof = () => { const T = {}, t = (k, f) => { const a = performance.now(); f(); T[k] = +(performance.now() - a).toFixed(1); };
   t('sim', () => { for (let i = 0; i < 4; i++) simStep(DT); }); t('details', () => { updateDetails(0.016, world.time); updateHangars(0.016); updateJetBridges(0.016); });

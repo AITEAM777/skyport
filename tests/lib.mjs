@@ -32,14 +32,17 @@ export async function openSkyport({ width = 1600, height = 900, query = '', clea
   }
   // fonts are optional; never wait on them
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
-  const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  const errors = []; let bootErr = null;
+  page.on('pageerror', e => { errors.push(e.message); bootErr = bootErr || e.message; });
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(url, { timeout: 180000 });
-  await Promise.race([
-    page.waitForFunction(() => window.__ready || window.__err, null, { timeout: 180000 }),
-    new Promise((_, rej) => page.on('pageerror', e => rej(new Error('page error during boot: ' + e.message)))),
-  ]);
+  let poll; // fail fast on a boot error instead of waiting for the timeout
+  try {
+    await Promise.race([
+      page.waitForFunction(() => window.__ready || window.__err, null, { timeout: 180000 }),
+      new Promise((_, rej) => { poll = setInterval(() => { if (bootErr) rej(new Error('page error during boot: ' + bootErr)); }, 200); }),
+    ]);
+  } finally { clearInterval(poll); }
   const close = async () => { await browser.close(); server.close(); };
   return { page, context, browser, errors, close, url };
 }
